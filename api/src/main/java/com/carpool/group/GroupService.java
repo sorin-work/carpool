@@ -1,0 +1,86 @@
+package com.carpool.group;
+
+import com.carpool.common.ApiException;
+import com.carpool.group.dto.CreateGroupRequest;
+import com.carpool.group.dto.GroupDetail;
+import com.carpool.group.dto.GroupSummary;
+import com.carpool.group.dto.MemberResponse;
+import com.carpool.user.User;
+import com.carpool.user.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.util.List;
+
+@Service
+public class GroupService {
+
+    static final ZoneId DEFAULT_ZONE = ZoneId.of("Europe/Bucharest");
+
+    private final GroupRepository groups;
+    private final GroupMemberRepository members;
+    private final UserRepository users;
+    private final GroupAccess access;
+    private final Clock clock;
+
+    public GroupService(GroupRepository groups, GroupMemberRepository members, UserRepository users,
+                        GroupAccess access, Clock clock) {
+        this.groups = groups;
+        this.members = members;
+        this.users = users;
+        this.access = access;
+        this.clock = clock;
+    }
+
+    @Transactional
+    public GroupDetail create(Long userId, CreateGroupRequest request) {
+        User user = users.getReferenceById(userId);
+        CarpoolGroup group = groups.save(new CarpoolGroup(request.name().trim(), blankToNull(request.description()),
+                uniqueInviteCode(), parseZone(request.timezone()), clock.instant()));
+        members.save(new GroupMember(group, user, MemberRole.OWNER, clock.instant()));
+        return detail(group.getId(), userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GroupSummary> listMine(Long userId) {
+        return members.findAllForUser(userId).stream()
+                .map(m -> new GroupSummary(m.getGroup().getId(), m.getGroup().getName(),
+                        m.getGroup().getDescription(), m.getRole(), members.countByGroupId(m.getGroup().getId())))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public GroupDetail detail(Long groupId, Long userId) {
+        GroupMember me = access.requireMember(groupId, userId);
+        CarpoolGroup group = me.getGroup();
+        List<MemberResponse> all = members.findAllInGroup(groupId).stream().map(MemberResponse::from).toList();
+        return new GroupDetail(group.getId(), group.getName(), group.getDescription(), group.getZone().getId(),
+                group.getInviteCode(), me.getRole(), me.getId(), all);
+    }
+
+    private String uniqueInviteCode() {
+        String code;
+        do {
+            code = InviteCodes.generate();
+        } while (groups.existsByInviteCode(code));
+        return code;
+    }
+
+    static ZoneId parseZone(String value) {
+        if (value == null || value.isBlank()) {
+            return DEFAULT_ZONE;
+        }
+        try {
+            return ZoneId.of(value.trim());
+        } catch (DateTimeException ex) {
+            throw ApiException.badRequest("Unknown time zone: " + value);
+        }
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+}
