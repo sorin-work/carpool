@@ -65,6 +65,19 @@ class AuthControllerTest extends IntegrationTest {
     }
 
     @Test
+    void readsAndRenamesTheCurrentUser() throws Exception {
+        String token = register("cara@example.com", "Cara");
+
+        mvc.perform(getAs(token, "/api/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("cara@example.com"));
+
+        mvc.perform(putAs(token, "/api/me").content(toJson(Map.of("displayName", "  Cara M. "))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.displayName").value("Cara M."));
+    }
+
+    @Test
     void protectedEndpointsNeedAToken() throws Exception {
         mvc.perform(get("/api/groups"))
                 .andExpect(status().isUnauthorized())
