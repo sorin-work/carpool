@@ -3,6 +3,7 @@ package com.carpool.group;
 import com.carpool.group.dto.CreateGroupRequest;
 import com.carpool.group.dto.GroupDetail;
 import com.carpool.group.dto.GroupSummary;
+import com.carpool.group.dto.JoinGroupRequest;
 import com.carpool.security.AuthUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,11 @@ public class GroupController {
     @ResponseStatus(HttpStatus.CREATED)
     public GroupDetail create(@AuthenticationPrincipal AuthUser auth, @Valid @RequestBody CreateGroupRequest request) {
         return groupService.create(auth.id(), request);
+    }
+
+    @PostMapping("/join")
+    public GroupDetail join(@AuthenticationPrincipal AuthUser auth, @Valid @RequestBody JoinGroupRequest request) {
+        return groupService.join(auth.id(), request.inviteCode());
     }
 
     @GetMapping("/{groupId}")

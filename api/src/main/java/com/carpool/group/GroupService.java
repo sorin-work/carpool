@@ -61,6 +61,16 @@ public class GroupService {
                 group.getInviteCode(), me.getRole(), me.getId(), all);
     }
 
+    @Transactional
+    public GroupDetail join(Long userId, String inviteCode) {
+        CarpoolGroup group = groups.findByInviteCode(InviteCodes.normalize(inviteCode))
+                .orElseThrow(() -> ApiException.notFound("Invite code"));
+        if (members.findByGroupIdAndUserId(group.getId(), userId).isEmpty()) {
+            members.save(new GroupMember(group, users.getReferenceById(userId), MemberRole.MEMBER, clock.instant()));
+        }
+        return detail(group.getId(), userId);
+    }
+
     private String uniqueInviteCode() {
         String code;
         do {
