@@ -5,6 +5,7 @@ import com.carpool.group.dto.CreateGroupRequest;
 import com.carpool.group.dto.GroupDetail;
 import com.carpool.group.dto.GroupSummary;
 import com.carpool.group.dto.MemberResponse;
+import com.carpool.group.dto.UpdateGroupRequest;
 import com.carpool.user.User;
 import com.carpool.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -69,6 +70,50 @@ public class GroupService {
             members.save(new GroupMember(group, users.getReferenceById(userId), MemberRole.MEMBER, clock.instant()));
         }
         return detail(group.getId(), userId);
+    }
+
+    @Transactional
+    public GroupDetail update(Long groupId, Long userId, UpdateGroupRequest request) {
+        CarpoolGroup group = access.requireManager(groupId, userId).getGroup();
+        if (request.name() != null) {
+            if (request.name().isBlank()) {
+                throw ApiException.badRequest("Name cannot be blank");
+            }
+            group.setName(request.name().trim());
+        }
+        if (request.description() != null) {
+            group.setDescription(blankToNull(request.description()));
+        }
+        if (request.timezone() != null) {
+            group.setZone(parseZone(request.timezone()));
+        }
+        return detail(groupId, userId);
+    }
+
+    @Transactional
+    public GroupDetail regenerateInviteCode(Long groupId, Long userId) {
+        access.requireManager(groupId, userId).getGroup().setInviteCode(uniqueInviteCode());
+        return detail(groupId, userId);
+    }
+
+    @Transactional
+    public MemberResponse changeRole(Long groupId, Long memberId, Long userId, MemberRole role) {
+        access.requireManager(groupId, userId);
+        if (role == MemberRole.OWNER) {
+            throw ApiException.badRequest("Ownership cannot be assigned");
+        }
+        GroupMember member = memberInGroup(groupId, memberId);
+        if (member.getRole() == MemberRole.OWNER) {
+            throw ApiException.badRequest("The owner's role cannot be changed");
+        }
+        member.setRole(role);
+        return MemberResponse.from(member);
+    }
+
+    GroupMember memberInGroup(Long groupId, Long memberId) {
+        return members.findById(memberId)
+                .filter(m -> m.getGroup().getId().equals(groupId))
+                .orElseThrow(() -> ApiException.notFound("Member"));
     }
 
     private String uniqueInviteCode() {
