@@ -110,6 +110,43 @@ public class GroupService {
         return MemberResponse.from(member);
     }
 
+    @Transactional
+    public void leave(Long groupId, Long userId) {
+        GroupMember me = access.requireMember(groupId, userId);
+        if (me.getRole() == MemberRole.OWNER && members.countByGroupId(groupId) > 1) {
+            throw ApiException.badRequest("Hand the group over to another member before leaving");
+        }
+        members.delete(me);
+        if (me.getRole() == MemberRole.OWNER) {
+            groups.delete(me.getGroup());
+        }
+    }
+
+    @Transactional
+    public void removeMember(Long groupId, Long memberId, Long userId) {
+        GroupMember admin = access.requireManager(groupId, userId);
+        GroupMember member = memberInGroup(groupId, memberId);
+        if (member.getId().equals(admin.getId())) {
+            throw ApiException.badRequest("Use leave to remove yourself");
+        }
+        if (member.getRole() == MemberRole.OWNER) {
+            throw ApiException.forbidden("The owner cannot be removed");
+        }
+        members.delete(member);
+    }
+
+    @Transactional
+    public GroupDetail transferOwnership(Long groupId, Long memberId, Long userId) {
+        GroupMember owner = access.requireMember(groupId, userId);
+        if (owner.getRole() != MemberRole.OWNER) {
+            throw ApiException.forbidden("Only the owner can hand the group over");
+        }
+        GroupMember next = memberInGroup(groupId, memberId);
+        next.setRole(MemberRole.OWNER);
+        owner.setRole(MemberRole.ADMIN);
+        return detail(groupId, userId);
+    }
+
     GroupMember memberInGroup(Long groupId, Long memberId) {
         return members.findById(memberId)
                 .filter(m -> m.getGroup().getId().equals(groupId))

@@ -11,6 +11,7 @@ import com.carpool.security.AuthUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -69,5 +70,24 @@ public class GroupController {
     public MemberResponse changeRole(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId,
                                      @PathVariable Long memberId, @Valid @RequestBody ChangeRoleRequest request) {
         return groupService.changeRole(groupId, memberId, auth.id(), request.role());
+    }
+
+    @PostMapping("/{groupId}/leave")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void leave(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId) {
+        groupService.leave(groupId, auth.id());
+    }
+
+    @DeleteMapping("/{groupId}/members/{memberId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeMember(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId,
+                             @PathVariable Long memberId) {
+        groupService.removeMember(groupId, memberId, auth.id());
+    }
+
+    @PostMapping("/{groupId}/members/{memberId}/ownership")
+    public GroupDetail transferOwnership(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId,
+                                         @PathVariable Long memberId) {
+        return groupService.transferOwnership(groupId, memberId, auth.id());
     }
 }
