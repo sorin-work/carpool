@@ -6,6 +6,7 @@ import com.carpool.group.dto.GroupDetail;
 import com.carpool.group.dto.GroupSummary;
 import com.carpool.group.dto.MemberResponse;
 import com.carpool.group.dto.UpdateGroupRequest;
+import com.carpool.group.dto.UpdateMembershipRequest;
 import com.carpool.user.User;
 import com.carpool.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -145,6 +146,17 @@ public class GroupService {
         next.setRole(MemberRole.OWNER);
         owner.setRole(MemberRole.ADMIN);
         return detail(groupId, userId);
+    }
+
+    @Transactional
+    public MemberResponse updateMyMembership(Long groupId, Long userId, UpdateMembershipRequest request) {
+        GroupMember me = access.requireMember(groupId, userId);
+        if (request.canDrive() && request.carSeats() < 1) {
+            throw ApiException.badRequest("Drivers need at least one free seat");
+        }
+        me.setDriving(request.canDrive(), request.carSeats());
+        me.setPickupNote(blankToNull(request.pickupNote()));
+        return MemberResponse.from(me);
     }
 
     GroupMember memberInGroup(Long groupId, Long memberId) {

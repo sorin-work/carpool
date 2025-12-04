@@ -38,6 +38,16 @@ public class GroupMember {
     @Column(name = "joined_at", nullable = false)
     private Instant joinedAt;
 
+    @Column(name = "can_drive", nullable = false)
+    private boolean canDrive;
+
+    /** Passenger seats the member's car has, not counting the driver. */
+    @Column(name = "car_seats", nullable = false)
+    private int carSeats;
+
+    @Column(name = "pickup_note", length = 200)
+    private String pickupNote;
+
     protected GroupMember() {
     }
 
@@ -70,6 +80,27 @@ public class GroupMember {
 
     public Instant getJoinedAt() {
         return joinedAt;
+    }
+
+    public boolean isCanDrive() {
+        return canDrive;
+    }
+
+    public int getCarSeats() {
+        return carSeats;
+    }
+
+    public void setDriving(boolean canDrive, int carSeats) {
+        this.canDrive = canDrive;
+        this.carSeats = canDrive ? carSeats : 0;
+    }
+
+    public String getPickupNote() {
+        return pickupNote;
+    }
+
+    public void setPickupNote(String pickupNote) {
+        this.pickupNote = pickupNote;
     }
 
     public String getDisplayName() {

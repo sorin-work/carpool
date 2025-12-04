@@ -7,6 +7,7 @@ import com.carpool.group.dto.GroupSummary;
 import com.carpool.group.dto.JoinGroupRequest;
 import com.carpool.group.dto.MemberResponse;
 import com.carpool.group.dto.UpdateGroupRequest;
+import com.carpool.group.dto.UpdateMembershipRequest;
 import com.carpool.security.AuthUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -64,6 +65,12 @@ public class GroupController {
     @PostMapping("/{groupId}/invite-code")
     public GroupDetail regenerateInviteCode(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId) {
         return groupService.regenerateInviteCode(groupId, auth.id());
+    }
+
+    @PutMapping("/{groupId}/members/me")
+    public MemberResponse updateMyMembership(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId,
+                                             @Valid @RequestBody UpdateMembershipRequest request) {
+        return groupService.updateMyMembership(groupId, auth.id(), request);
     }
 
     @PutMapping("/{groupId}/members/{memberId}/role")
