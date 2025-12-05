@@ -70,6 +70,18 @@ public abstract class IntegrationTest {
         return json.readTree(result.getResponse().getContentAsString()).get("token").asText();
     }
 
+    protected JsonNode createGroup(String token, String name) throws Exception {
+        MvcResult result = mvc.perform(postAs(token, "/api/groups").content(toJson(java.util.Map.of("name", name))))
+                .andReturn();
+        return read(result);
+    }
+
+    protected JsonNode joinGroup(String token, String inviteCode) throws Exception {
+        MvcResult result = mvc.perform(postAs(token, "/api/groups/join")
+                .content(toJson(java.util.Map.of("inviteCode", inviteCode)))).andReturn();
+        return read(result);
+    }
+
     protected JsonNode read(MvcResult result) throws Exception {
         return json.readTree(result.getResponse().getContentAsString());
     }

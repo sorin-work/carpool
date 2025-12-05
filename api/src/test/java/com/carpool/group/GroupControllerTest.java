@@ -90,8 +90,4 @@ class GroupControllerTest extends IntegrationTest {
         mvc.perform(getAs(eve, "/api/groups/{id}", group.get("id").asLong()))
                 .andExpect(status().isNotFound());
     }
-
-    private JsonNode createGroup(String token, String name) throws Exception {
-        return read(mvc.perform(postAs(token, "/api/groups").content(toJson(Map.of("name", name)))).andReturn());
-    }
 }
