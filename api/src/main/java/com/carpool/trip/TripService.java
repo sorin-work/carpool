@@ -46,6 +46,36 @@ public class TripService {
         return TripResponse.from(trip);
     }
 
+    @Transactional
+    public TripResponse update(Long tripId, Long userId, TripRequest request) {
+        Trip trip = load(tripId);
+        access.requireManager(trip.getGroup().getId(), userId);
+        trip.setName(request.name().trim());
+        trip.setOrigin(request.origin().trim());
+        trip.setDestination(request.destination().trim());
+        trip.setDepartureTime(request.departureTime());
+        trip.setDays(request.days());
+        trip.setDistanceKm(request.distanceKm());
+        trip.setStartsOn(request.startsOn());
+        trip.setEndsOn(request.endsOn());
+        return TripResponse.from(trip);
+    }
+
+    @Transactional
+    public TripResponse setActive(Long tripId, Long userId, boolean active) {
+        Trip trip = load(tripId);
+        access.requireManager(trip.getGroup().getId(), userId);
+        trip.setActive(active);
+        return TripResponse.from(trip);
+    }
+
+    @Transactional
+    public void delete(Long tripId, Long userId) {
+        Trip trip = load(tripId);
+        access.requireManager(trip.getGroup().getId(), userId);
+        trips.delete(trip);
+    }
+
     Trip load(Long tripId) {
         return trips.findById(tripId).orElseThrow(() -> ApiException.notFound("Trip"));
     }

@@ -6,9 +6,11 @@ import com.carpool.trip.dto.TripResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -41,5 +43,27 @@ public class TripController {
     @GetMapping("/trips/{tripId}")
     public TripResponse get(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId) {
         return tripService.get(tripId, auth.id());
+    }
+
+    @PutMapping("/trips/{tripId}")
+    public TripResponse update(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId,
+                               @Valid @RequestBody TripRequest request) {
+        return tripService.update(tripId, auth.id(), request);
+    }
+
+    @PostMapping("/trips/{tripId}/pause")
+    public TripResponse pause(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId) {
+        return tripService.setActive(tripId, auth.id(), false);
+    }
+
+    @PostMapping("/trips/{tripId}/resume")
+    public TripResponse resume(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId) {
+        return tripService.setActive(tripId, auth.id(), true);
+    }
+
+    @DeleteMapping("/trips/{tripId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId) {
+        tripService.delete(tripId, auth.id());
     }
 }
