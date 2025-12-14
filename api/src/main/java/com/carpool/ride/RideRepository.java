@@ -1,0 +1,34 @@
+package com.carpool.ride;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+public interface RideRepository extends JpaRepository<Ride, Long> {
+
+    @Query("select r.rideDate from Ride r where r.trip.id = :tripId and r.rideDate >= :from and r.rideDate < :to")
+    List<LocalDate> findDatesForTrip(Long tripId, LocalDate from, LocalDate to);
+
+    @Query("""
+            select r from Ride r
+            join fetch r.trip t
+            left join fetch r.driver d
+            left join fetch d.user
+            where t.group.id = :groupId and r.rideDate >= :from and r.rideDate < :to
+            order by r.departureAt, t.name
+            """)
+    List<Ride> findForGroup(Long groupId, LocalDate from, LocalDate to);
+
+    @Query("""
+            select r from Ride r
+            join fetch r.trip t
+            join fetch t.group
+            left join fetch r.driver d
+            left join fetch d.user
+            where r.id = :id
+            """)
+    Optional<Ride> findWithDetails(Long id);
+}
