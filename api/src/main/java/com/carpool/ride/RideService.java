@@ -61,6 +61,46 @@ public class RideService {
         return RideResponse.from(ride);
     }
 
+    @Transactional
+    public RideResponse drive(Long rideId, Long userId, Integer seats) {
+        Ride ride = load(rideId);
+        GroupMember me = access.requireMember(ride.getTrip().getGroup().getId(), userId);
+        requireOpen(ride);
+        if (!me.isCanDrive()) {
+            throw ApiException.badRequest("Set up your car in the group before offering to drive");
+        }
+        if (ride.hasDriver() && !ride.isDrivenBy(me)) {
+            throw ApiException.conflict(ride.getDriver().getDisplayName() + " is already driving");
+        }
+        int offered = seats != null ? seats : me.getCarSeats();
+        if (offered > me.getCarSeats()) {
+            throw ApiException.badRequest("Your car only has " + me.getCarSeats() + " free seats");
+        }
+        ride.assignDriver(me, offered);
+        return RideResponse.from(ride);
+    }
+
+    @Transactional
+    public RideResponse stopDriving(Long rideId, Long userId) {
+        Ride ride = load(rideId);
+        GroupMember me = access.requireMember(ride.getTrip().getGroup().getId(), userId);
+        requireOpen(ride);
+        if (!ride.isDrivenBy(me) && !me.getRole().canManage()) {
+            throw ApiException.forbidden("Only the driver or an admin can do this");
+        }
+        ride.clearDriver();
+        return RideResponse.from(ride);
+    }
+
+    void requireOpen(Ride ride) {
+        if (ride.isCancelled()) {
+            throw ApiException.conflict("This ride was cancelled");
+        }
+        if (ride.hasDeparted(clock.instant())) {
+            throw ApiException.conflict("This ride has already left");
+        }
+    }
+
     /** Creates the rows for any ride in the range that has not been stored yet. */
     void materialize(CarpoolGroup group, LocalDate from, LocalDate to) {
         for (Trip trip : trips.findByGroupIdAndActiveTrue(group.getId())) {
