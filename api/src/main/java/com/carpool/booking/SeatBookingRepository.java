@@ -3,6 +3,7 @@ package com.carpool.booking;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,4 +23,11 @@ public interface SeatBookingRepository extends JpaRepository<SeatBooking, Long> 
               and b.status <> com.carpool.booking.BookingStatus.CANCELLED
             """)
     Optional<SeatBooking> findActive(Long rideId, Long memberId);
+
+    @Query("""
+            select b from SeatBooking b join fetch b.member m join fetch m.user
+            where b.ride.id in :rideIds and b.status <> com.carpool.booking.BookingStatus.CANCELLED
+            order by b.createdAt, b.id
+            """)
+    List<SeatBooking> findActiveForRides(Collection<Long> rideIds);
 }

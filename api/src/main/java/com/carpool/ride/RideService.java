@@ -1,5 +1,7 @@
 package com.carpool.ride;
 
+import com.carpool.booking.SeatBooking;
+import com.carpool.booking.SeatBookingRepository;
 import com.carpool.booking.SeatPlanner;
 import com.carpool.common.ApiException;
 import com.carpool.group.CarpoolGroup;
@@ -16,7 +18,9 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class RideService {
@@ -27,14 +31,16 @@ public class RideService {
     private final TripRepository trips;
     private final GroupAccess access;
     private final SeatPlanner planner;
+    private final SeatBookingRepository bookings;
     private final Clock clock;
 
     public RideService(RideRepository rides, TripRepository trips, GroupAccess access, SeatPlanner planner,
-                       Clock clock) {
+                       SeatBookingRepository bookings, Clock clock) {
         this.rides = rides;
         this.trips = trips;
         this.access = access;
         this.planner = planner;
+        this.bookings = bookings;
         this.clock = clock;
     }
 
@@ -52,17 +58,17 @@ public class RideService {
             throw ApiException.badRequest("Date range is limited to " + MAX_RANGE_DAYS + " days");
         }
         materialize(group, start, end);
-        return rides.findForGroup(groupId, start, end).stream()
+        List<Ride> found = rides.findForGroup(groupId, start, end).stream()
                 .filter(ride -> ride.getTrip().isActive() || ride.hasDeparted(clock.instant()))
-                .map(RideResponse::from)
                 .toList();
+        return views(found, me);
     }
 
     @Transactional(readOnly = true)
     public RideResponse get(Long rideId, Long userId) {
         Ride ride = load(rideId);
-        access.requireMember(ride.getTrip().getGroup().getId(), userId);
-        return RideResponse.from(ride);
+        GroupMember me = access.requireMember(ride.getTrip().getGroup().getId(), userId);
+        return view(ride, me);
     }
 
     @Transactional
@@ -82,7 +88,7 @@ public class RideService {
         }
         ride.assignDriver(me, offered);
         planner.rebalance(ride);
-        return RideResponse.from(ride);
+        return view(ride, me);
     }
 
     @Transactional
@@ -95,7 +101,22 @@ public class RideService {
         }
         ride.clearDriver();
         planner.rebalance(ride);
-        return RideResponse.from(ride);
+        return view(ride, me);
+    }
+
+    RideResponse view(Ride ride, GroupMember viewer) {
+        return views(List.of(ride), viewer).get(0);
+    }
+
+    List<RideResponse> views(List<Ride> list, GroupMember viewer) {
+        if (list.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, List<SeatBooking>> byRide = bookings.findActiveForRides(list.stream().map(Ride::getId).toList())
+                .stream().collect(Collectors.groupingBy(b -> b.getRide().getId()));
+        return list.stream()
+                .map(ride -> RideResponse.from(ride, byRide.getOrDefault(ride.getId(), List.of()), viewer.getId()))
+                .toList();
     }
 
     void requireOpen(Ride ride) {
