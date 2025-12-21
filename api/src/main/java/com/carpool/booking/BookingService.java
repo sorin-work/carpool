@@ -18,12 +18,15 @@ public class BookingService {
     private final SeatBookingRepository bookings;
     private final RideRepository rides;
     private final GroupAccess access;
+    private final SeatPlanner planner;
     private final Clock clock;
 
-    public BookingService(SeatBookingRepository bookings, RideRepository rides, GroupAccess access, Clock clock) {
+    public BookingService(SeatBookingRepository bookings, RideRepository rides, GroupAccess access,
+                          SeatPlanner planner, Clock clock) {
         this.bookings = bookings;
         this.rides = rides;
         this.access = access;
+        this.planner = planner;
         this.clock = clock;
     }
 
@@ -39,6 +42,7 @@ public class BookingService {
             throw ApiException.conflict("You already asked for a seat on this ride");
         }
         SeatBooking booking = bookings.save(new SeatBooking(ride, me, clock.instant()));
+        planner.rebalance(ride);
         return BookingResponse.from(booking);
     }
 
@@ -50,6 +54,8 @@ public class BookingService {
         SeatBooking booking = bookings.findActive(rideId, me.getId())
                 .orElseThrow(() -> ApiException.notFound("Booking"));
         booking.setStatus(BookingStatus.CANCELLED, clock.instant());
+        bookings.flush();
+        planner.rebalance(ride);
     }
 
     @Transactional(readOnly = true)

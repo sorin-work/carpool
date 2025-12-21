@@ -1,5 +1,6 @@
 package com.carpool.ride;
 
+import com.carpool.booking.SeatPlanner;
 import com.carpool.common.ApiException;
 import com.carpool.group.CarpoolGroup;
 import com.carpool.group.GroupAccess;
@@ -25,12 +26,15 @@ public class RideService {
     private final RideRepository rides;
     private final TripRepository trips;
     private final GroupAccess access;
+    private final SeatPlanner planner;
     private final Clock clock;
 
-    public RideService(RideRepository rides, TripRepository trips, GroupAccess access, Clock clock) {
+    public RideService(RideRepository rides, TripRepository trips, GroupAccess access, SeatPlanner planner,
+                       Clock clock) {
         this.rides = rides;
         this.trips = trips;
         this.access = access;
+        this.planner = planner;
         this.clock = clock;
     }
 
@@ -77,6 +81,7 @@ public class RideService {
             throw ApiException.badRequest("Your car only has " + me.getCarSeats() + " free seats");
         }
         ride.assignDriver(me, offered);
+        planner.rebalance(ride);
         return RideResponse.from(ride);
     }
 
@@ -89,6 +94,7 @@ public class RideService {
             throw ApiException.forbidden("Only the driver or an admin can do this");
         }
         ride.clearDriver();
+        planner.rebalance(ride);
         return RideResponse.from(ride);
     }
 
