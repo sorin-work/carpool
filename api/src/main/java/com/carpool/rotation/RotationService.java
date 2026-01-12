@@ -1,7 +1,6 @@
 package com.carpool.rotation;
 
 import com.carpool.booking.BookingStatus;
-import com.carpool.booking.SeatBooking;
 import com.carpool.booking.SeatBookingRepository;
 import com.carpool.booking.SeatPlanner;
 import com.carpool.common.ApiException;
@@ -20,6 +19,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,10 +40,13 @@ public class RotationService {
     private final RideService rideService;
     private final SeatBookingRepository bookings;
     private final SeatPlanner planner;
+    private final AbsenceRepository absences;
     private final Clock clock;
 
     public RotationService(GroupAccess access, GroupMemberRepository members, RideRepository rides,
-                           RideService rideService, SeatBookingRepository bookings, SeatPlanner planner, Clock clock) {
+                           RideService rideService, SeatBookingRepository bookings, SeatPlanner planner,
+                           AbsenceRepository absences, Clock clock) {
+        this.absences = absences;
         this.access = access;
         this.members = members;
         this.rides = rides;
@@ -103,11 +107,22 @@ public class RotationService {
         Map<Long, DriverHistory> history = rides.findDriverHistory(groupId, start.minusDays(HISTORY_DAYS)).stream()
                 .collect(Collectors.toMap(DriverHistory::memberId, Function.identity()));
 
+        Map<Long, Set<LocalDate>> away = new HashMap<>();
+        for (Absence absence : absences.findOverlapping(groupId, start, end)) {
+            Set<LocalDate> days = away.computeIfAbsent(absence.getMember().getId(), id -> new HashSet<>());
+            for (LocalDate d = start; d.isBefore(end); d = d.plusDays(1)) {
+                if (absence.covers(d)) {
+                    days.add(d);
+                }
+            }
+        }
+
         List<FairRotation.Candidate> candidates = new ArrayList<>();
         for (GroupMember driver : drivers.values()) {
             DriverHistory h = history.get(driver.getId());
             candidates.add(new FairRotation.Candidate(driver.getId(), driver.getCarSeats(),
-                    h == null ? 0 : (int) h.drives(), h == null ? null : h.lastDrove(), Set.of()));
+                    h == null ? 0 : (int) h.drives(), h == null ? null : h.lastDrove(),
+                    away.getOrDefault(driver.getId(), Set.of())));
         }
         List<FairRotation.Slot> slots = open.stream()
                 .map(r -> new FairRotation.Slot(r.getId(), r.getRideDate(), riders.getOrDefault(r.getId(), 0L).intValue()))
