@@ -129,7 +129,7 @@ public class RideService {
     }
 
     /** Creates the rows for any ride in the range that has not been stored yet. */
-    void materialize(CarpoolGroup group, LocalDate from, LocalDate to) {
+    public void materialize(CarpoolGroup group, LocalDate from, LocalDate to) {
         for (Trip trip : trips.findByGroupIdAndActiveTrue(group.getId())) {
             Set<LocalDate> existing = new HashSet<>(rides.findDatesForTrip(trip.getId(), from, to));
             for (RideGenerator.PlannedRide planned : RideGenerator.plan(trip, group.getZone(), from, to)) {

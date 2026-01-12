@@ -31,4 +31,13 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
             where r.id = :id
             """)
     Optional<Ride> findWithDetails(Long id);
+
+    @Query("""
+            select new com.carpool.ride.DriverHistory(r.driver.id, count(r), max(r.rideDate))
+            from Ride r
+            where r.trip.group.id = :groupId and r.driver is not null
+              and r.status = com.carpool.ride.RideStatus.SCHEDULED and r.rideDate >= :since
+            group by r.driver.id
+            """)
+    List<DriverHistory> findDriverHistory(Long groupId, LocalDate since);
 }
