@@ -1,5 +1,6 @@
 package com.carpool.ride;
 
+import com.carpool.ride.dto.CancelRideRequest;
 import com.carpool.ride.dto.DriveRequest;
 import com.carpool.ride.dto.RideResponse;
 import com.carpool.security.AuthUser;
@@ -49,5 +50,16 @@ public class RideController {
     @DeleteMapping("/rides/{rideId}/driver")
     public RideResponse stopDriving(@AuthenticationPrincipal AuthUser auth, @PathVariable Long rideId) {
         return rideService.stopDriving(rideId, auth.id());
+    }
+
+    @PostMapping("/rides/{rideId}/cancel")
+    public RideResponse cancel(@AuthenticationPrincipal AuthUser auth, @PathVariable Long rideId,
+                               @Valid @RequestBody(required = false) CancelRideRequest request) {
+        return rideService.cancel(rideId, auth.id(), request != null ? request.reason() : null);
+    }
+
+    @PostMapping("/rides/{rideId}/reinstate")
+    public RideResponse reinstate(@AuthenticationPrincipal AuthUser auth, @PathVariable Long rideId) {
+        return rideService.reinstate(rideId, auth.id());
     }
 }

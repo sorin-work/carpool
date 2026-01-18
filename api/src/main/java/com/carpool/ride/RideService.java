@@ -7,6 +7,9 @@ import com.carpool.common.ApiException;
 import com.carpool.group.CarpoolGroup;
 import com.carpool.group.GroupAccess;
 import com.carpool.group.GroupMember;
+import com.carpool.notification.NotificationService;
+import com.carpool.notification.NotificationType;
+import com.carpool.user.User;
 import com.carpool.ride.dto.RideResponse;
 import com.carpool.trip.Trip;
 import com.carpool.trip.TripRepository;
@@ -32,10 +35,12 @@ public class RideService {
     private final GroupAccess access;
     private final SeatPlanner planner;
     private final SeatBookingRepository bookings;
+    private final NotificationService notifications;
     private final Clock clock;
 
     public RideService(RideRepository rides, TripRepository trips, GroupAccess access, SeatPlanner planner,
-                       SeatBookingRepository bookings, Clock clock) {
+                       SeatBookingRepository bookings, NotificationService notifications, Clock clock) {
+        this.notifications = notifications;
         this.rides = rides;
         this.trips = trips;
         this.access = access;
@@ -102,6 +107,53 @@ public class RideService {
         ride.clearDriver();
         planner.rebalance(ride);
         return view(ride, me);
+    }
+
+    @Transactional
+    public RideResponse cancel(Long rideId, Long userId, String reason) {
+        Ride ride = load(rideId);
+        GroupMember me = access.requireMember(ride.getTrip().getGroup().getId(), userId);
+        if (!ride.isDrivenBy(me) && !me.getRole().canManage()) {
+            throw ApiException.forbidden("Only the driver or an admin can cancel a ride");
+        }
+        requireOpen(ride);
+        String why = reason == null || reason.isBlank() ? null : reason.trim();
+        ride.cancel(why);
+
+        String message = RideMessages.describe(ride) + " was cancelled by " + RideMessages.bold(me.getDisplayName())
+                + (why != null ? ": " + why : ".");
+        notifications.notifyAll(affected(ride, me), NotificationType.RIDE_CANCELLED, message, RideMessages.link(ride));
+        return view(ride, me);
+    }
+
+    @Transactional
+    public RideResponse reinstate(Long rideId, Long userId) {
+        Ride ride = load(rideId);
+        GroupMember me = access.requireManager(ride.getTrip().getGroup().getId(), userId);
+        if (!ride.isCancelled()) {
+            throw ApiException.conflict("This ride is not cancelled");
+        }
+        if (ride.hasDeparted(clock.instant())) {
+            throw ApiException.conflict("This ride has already left");
+        }
+        ride.reinstate();
+        String message = RideMessages.describe(ride) + " is back on.";
+        notifications.notifyAll(affected(ride, me), NotificationType.RIDE_REINSTATED, message, RideMessages.link(ride));
+        return view(ride, me);
+    }
+
+    /** The driver and everyone holding or waiting for a seat, except whoever made the change. */
+    private List<User> affected(Ride ride, GroupMember actor) {
+        List<GroupMember> people = new java.util.ArrayList<>();
+        if (ride.hasDriver()) {
+            people.add(ride.getDriver());
+        }
+        bookings.findActiveForRide(ride.getId()).forEach(b -> people.add(b.getMember()));
+        return people.stream()
+                .filter(m -> !m.getId().equals(actor.getId()))
+                .map(GroupMember::getUser)
+                .distinct()
+                .toList();
     }
 
     RideResponse view(Ride ride, GroupMember viewer) {
