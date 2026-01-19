@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class RideService {
             throw ApiException.badRequest("Your car only has " + me.getCarSeats() + " free seats");
         }
         ride.assignDriver(me, offered);
-        planner.rebalance(ride);
+        planner.rebalance(ride, me);
         return view(ride, me);
     }
 
@@ -104,8 +105,14 @@ public class RideService {
         if (!ride.isDrivenBy(me) && !me.getRole().canManage()) {
             throw ApiException.forbidden("Only the driver or an admin can do this");
         }
+        GroupMember previous = ride.getDriver();
         ride.clearDriver();
-        planner.rebalance(ride);
+        planner.rebalance(ride, me);
+        if (previous != null) {
+            String message = RideMessages.bold(previous.getDisplayName()) + " can no longer drive "
+                    + RideMessages.describe(ride) + ". Your seat is on hold until someone else takes it.";
+            notifications.notifyAll(affected(ride, me), NotificationType.DRIVER_LEFT, message, RideMessages.link(ride));
+        }
         return view(ride, me);
     }
 
@@ -144,7 +151,7 @@ public class RideService {
 
     /** The driver and everyone holding or waiting for a seat, except whoever made the change. */
     private List<User> affected(Ride ride, GroupMember actor) {
-        List<GroupMember> people = new java.util.ArrayList<>();
+        List<GroupMember> people = new ArrayList<>();
         if (ride.hasDriver()) {
             people.add(ride.getDriver());
         }

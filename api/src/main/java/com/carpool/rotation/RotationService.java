@@ -7,8 +7,11 @@ import com.carpool.common.ApiException;
 import com.carpool.group.GroupAccess;
 import com.carpool.group.GroupMember;
 import com.carpool.group.GroupMemberRepository;
+import com.carpool.notification.NotificationService;
+import com.carpool.notification.NotificationType;
 import com.carpool.ride.DriverHistory;
 import com.carpool.ride.Ride;
+import com.carpool.ride.RideMessages;
 import com.carpool.ride.RideRepository;
 import com.carpool.ride.RideService;
 import com.carpool.rotation.dto.RotationProposal;
@@ -41,12 +44,14 @@ public class RotationService {
     private final SeatBookingRepository bookings;
     private final SeatPlanner planner;
     private final AbsenceRepository absences;
+    private final NotificationService notifications;
     private final Clock clock;
 
     public RotationService(GroupAccess access, GroupMemberRepository members, RideRepository rides,
                            RideService rideService, SeatBookingRepository bookings, SeatPlanner planner,
-                           AbsenceRepository absences, Clock clock) {
+                           AbsenceRepository absences, NotificationService notifications, Clock clock) {
         this.absences = absences;
+        this.notifications = notifications;
         this.access = access;
         this.members = members;
         this.rides = rides;
@@ -76,7 +81,11 @@ public class RotationService {
                     .ifPresent(own -> own.setStatus(BookingStatus.CANCELLED, clock.instant()));
             ride.assignDriver(driver, driver.getCarSeats());
             bookings.flush();
-            planner.rebalance(ride);
+            planner.rebalance(ride, me);
+            if (!driver.getId().equals(me.getId())) {
+                notifications.notify(driver.getUser(), NotificationType.DRIVER_ASSIGNED,
+                        "The rotation has you driving " + RideMessages.describe(ride) + ".", RideMessages.link(ride));
+            }
         }
         return plan.proposals();
     }

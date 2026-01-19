@@ -42,7 +42,7 @@ public class BookingService {
             throw ApiException.conflict("You already asked for a seat on this ride");
         }
         SeatBooking booking = bookings.save(new SeatBooking(ride, me, clock.instant()));
-        planner.rebalance(ride);
+        planner.rebalance(ride, me);
         return BookingResponse.from(booking);
     }
 
@@ -55,7 +55,7 @@ public class BookingService {
                 .orElseThrow(() -> ApiException.notFound("Booking"));
         booking.setStatus(BookingStatus.CANCELLED, clock.instant());
         bookings.flush();
-        planner.rebalance(ride);
+        planner.rebalance(ride, me);
     }
 
     @Transactional(readOnly = true)
