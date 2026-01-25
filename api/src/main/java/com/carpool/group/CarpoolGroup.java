@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 
@@ -32,6 +33,12 @@ public class CarpoolGroup {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Column(name = "cost_per_km", nullable = false, precision = 6, scale = 3)
+    private BigDecimal costPerKm = BigDecimal.ZERO;
+
+    @Column(nullable = false, length = 3)
+    private String currency = "EUR";
 
     protected CarpoolGroup() {
     }
@@ -82,5 +89,21 @@ public class CarpoolGroup {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public BigDecimal getCostPerKm() {
+        return costPerKm;
+    }
+
+    public void setCostPerKm(BigDecimal costPerKm) {
+        this.costPerKm = costPerKm;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 }

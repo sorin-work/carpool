@@ -60,7 +60,7 @@ public class GroupService {
         CarpoolGroup group = me.getGroup();
         List<MemberResponse> all = members.findAllInGroup(groupId).stream().map(MemberResponse::from).toList();
         return new GroupDetail(group.getId(), group.getName(), group.getDescription(), group.getZone().getId(),
-                group.getInviteCode(), me.getRole(), me.getId(), all);
+                group.getInviteCode(), group.getCostPerKm(), group.getCurrency(), me.getRole(), me.getId(), all);
     }
 
     @Transactional
@@ -87,6 +87,12 @@ public class GroupService {
         }
         if (request.timezone() != null) {
             group.setZone(parseZone(request.timezone()));
+        }
+        if (request.costPerKm() != null) {
+            group.setCostPerKm(request.costPerKm());
+        }
+        if (request.currency() != null) {
+            group.setCurrency(request.currency());
         }
         return detail(groupId, userId);
     }
