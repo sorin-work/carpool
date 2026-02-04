@@ -82,6 +82,7 @@ public class CostService {
                 })
                 .sorted(Comparator.comparingLong(MemberBalance::balanceCents).reversed())
                 .toList();
-        return new CostReport(start, end, group.getCurrency(), group.getCostPerKm(), total, balances);
+        return new CostReport(start, end, group.getCurrency(), group.getCostPerKm(), total, balances,
+                SettlementPlanner.settle(balances));
     }
 }
