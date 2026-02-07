@@ -1,6 +1,20 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+
 import App from './App.vue'
+import router from './router'
+import { onUnauthorized } from './api/client'
+import { useAuthStore } from './stores/auth'
 
 import './assets/main.css'
 
-createApp(App).mount('#app')
+const app = createApp(App)
+app.use(createPinia())
+app.use(router)
+
+onUnauthorized(() => {
+  useAuthStore().logout()
+  router.push({ name: 'login' })
+})
+
+app.mount('#app')
