@@ -1,0 +1,40 @@
+{
+  "name": "carpool-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --build && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "vue-tsc --build",
+    "lint": "eslint .",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/"
+  },
+  "dependencies": {
+    "pinia": "^3.0.4",
+    "vue": "^3.5.27",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "^22.0.5",
+    "@types/jsdom": "^27.0.0",
+    "@types/node": "^22.19.9",
+    "@vitejs/plugin-vue": "^6.0.4",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.6.0",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.8.1",
+    "eslint": "^9.39.2",
+    "eslint-plugin-vue": "^10.7.0",
+    "jsdom": "^27.4.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18",
+    "vue-tsc": "^3.2.4"
+  }
+}
