@@ -6,10 +6,11 @@ import { groupApi } from '@/api'
 import { ApiError } from '@/api/client'
 import type { Member } from '@/api/types'
 import MemberAvatar from '@/components/MemberAvatar.vue'
+import MembershipForm from '@/components/MembershipForm.vue'
 import { useGroupStore } from '@/stores/group'
 
 const store = useGroupStore()
-const { group, isManager } = storeToRefs(store)
+const { group, isManager, me } = storeToRefs(store)
 const error = ref('')
 const copied = ref(false)
 
@@ -95,6 +96,13 @@ async function remove(member: Member) {
         </template>
       </li>
     </ul>
+
+    <MembershipForm
+      v-if="me"
+      :group-id="group.id"
+      :member="me"
+      @saved="store.updateMember($event)"
+    />
   </div>
 </template>
 
