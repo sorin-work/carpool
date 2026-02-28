@@ -29,6 +29,7 @@ watch(
       <p v-if="group.description" class="muted">{{ group.description }}</p>
     </header>
     <nav class="tabs">
+      <RouterLink :to="`/groups/${group.id}/trips`">Trips</RouterLink>
       <RouterLink :to="`/groups/${group.id}/members`">Members</RouterLink>
     </nav>
     <RouterView />
