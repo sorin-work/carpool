@@ -33,6 +33,11 @@ const router = createRouter({
           component: () => import('@/views/group/SchedulePanel.vue'),
         },
         {
+          path: 'rides/:rideId(\\d+)',
+          name: 'ride',
+          component: () => import('@/views/RideView.vue'),
+        },
+        {
           path: 'trips',
           name: 'group-trips',
           component: () => import('@/views/group/TripsPanel.vue'),
