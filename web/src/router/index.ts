@@ -27,7 +27,11 @@ const router = createRouter({
       path: '/groups/:groupId(\\d+)',
       component: () => import('@/views/GroupView.vue'),
       children: [
-        { path: '', redirect: (to) => `/groups/${to.params.groupId}/members` },
+        {
+          path: '',
+          name: 'group-schedule',
+          component: () => import('@/views/group/SchedulePanel.vue'),
+        },
         {
           path: 'trips',
           name: 'group-trips',
