@@ -6,12 +6,13 @@ import { rideApi } from '@/api'
 import { ApiError } from '@/api/client'
 import type { Ride } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
+import RideActions from '@/components/RideActions.vue'
 import RideCard from '@/components/RideCard.vue'
 import { useGroupStore } from '@/stores/group'
 import { addDays, formatDay, todayIn } from '@/utils/dates'
 
 const store = useGroupStore()
-const { group } = storeToRefs(store)
+const { group, me } = storeToRefs(store)
 
 const from = ref(todayIn(group.value?.timezone ?? 'UTC'))
 const rides = ref<Ride[]>([])
@@ -72,7 +73,9 @@ watch(from, load, { immediate: true })
           :ride="ride"
           :time-zone="group.timezone"
           :group-id="group.id"
-        />
+        >
+          <RideActions v-if="me" :ride="ride" :me="me" @changed="load" />
+        </RideCard>
       </div>
     </section>
   </div>
