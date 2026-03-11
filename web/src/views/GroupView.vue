@@ -30,6 +30,7 @@ watch(
     </header>
     <nav class="tabs">
       <RouterLink :to="`/groups/${group.id}`">Schedule</RouterLink>
+      <RouterLink :to="`/groups/${group.id}/rotation`">Rotation</RouterLink>
       <RouterLink :to="`/groups/${group.id}/trips`">Trips</RouterLink>
       <RouterLink :to="`/groups/${group.id}/members`">Members</RouterLink>
     </nav>

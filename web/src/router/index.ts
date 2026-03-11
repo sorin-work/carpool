@@ -38,6 +38,11 @@ const router = createRouter({
           component: () => import('@/views/RideView.vue'),
         },
         {
+          path: 'rotation',
+          name: 'group-rotation',
+          component: () => import('@/views/group/RotationPanel.vue'),
+        },
+        {
           path: 'trips',
           name: 'group-trips',
           component: () => import('@/views/group/TripsPanel.vue'),
