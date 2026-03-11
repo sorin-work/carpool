@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue'
 import { rotationApi } from '@/api'
 import { ApiError } from '@/api/client'
 import type { RotationProposal } from '@/api/types'
+import AbsenceList from '@/components/AbsenceList.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { useGroupStore } from '@/stores/group'
 import { addDays, formatDay, formatTime, todayIn } from '@/utils/dates'
@@ -116,6 +117,13 @@ watch([from, days], preview, { immediate: true })
         <button type="button" class="primary" @click="apply">Assign these drivers</button>
       </div>
     </template>
+
+    <AbsenceList
+      :group-id="group.id"
+      :my-member-id="group.myMemberId"
+      :can-manage="isManager"
+      @changed="preview"
+    />
   </div>
 </template>
 
