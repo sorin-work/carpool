@@ -48,6 +48,11 @@ const router = createRouter({
           component: () => import('@/views/group/RotationPanel.vue'),
         },
         {
+          path: 'swaps',
+          name: 'group-swaps',
+          component: () => import('@/views/group/SwapsPanel.vue'),
+        },
+        {
           path: 'trips',
           name: 'group-trips',
           component: () => import('@/views/group/TripsPanel.vue'),
