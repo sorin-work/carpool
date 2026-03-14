@@ -1,20 +1,22 @@
 import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia } from 'pinia'
+import { createMemoryHistory, createRouter } from 'vue-router'
 
 import App from '../App.vue'
 
 describe('App', () => {
-  it('renders the header and the router outlet', () => {
-    const wrapper = mount(App, {
-      global: {
-        plugins: [createPinia()],
-        stubs: {
-          RouterView: { template: '<p>page</p>' },
-          RouterLink: { template: '<a><slot /></a>' },
-        },
-      },
+  it('renders the header and the current page', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { template: '<p>page</p>' } }],
     })
+    router.push('/')
+    await router.isReady()
+
+    const wrapper = mount(App, { global: { plugins: [createPinia(), router] } })
+    await flushPromises()
+
     expect(wrapper.text()).toContain('Carpool')
     expect(wrapper.text()).toContain('page')
   })

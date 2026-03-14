@@ -24,6 +24,11 @@ const router = createRouter({
       component: () => import('@/views/GroupsView.vue'),
     },
     {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/NotificationsView.vue'),
+    },
+    {
       path: '/groups/:groupId(\\d+)',
       component: () => import('@/views/GroupView.vue'),
       children: [

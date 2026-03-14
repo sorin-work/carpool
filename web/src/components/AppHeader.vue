@@ -1,10 +1,26 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+import { useNotificationStore } from '@/stores/notifications'
 
 const auth = useAuthStore()
+const notifications = useNotificationStore()
 const router = useRouter()
+const route = useRoute()
+
+let timer: ReturnType<typeof setInterval> | undefined
+
+onMounted(() => {
+  if (auth.isSignedIn) notifications.refresh()
+  timer = setInterval(() => auth.isSignedIn && notifications.refresh(), 60_000)
+})
+onUnmounted(() => clearInterval(timer))
+watch(
+  () => route.fullPath,
+  () => auth.isSignedIn && notifications.refresh(),
+)
 
 function signOut() {
   auth.logout()
@@ -21,6 +37,10 @@ function signOut() {
       </RouterLink>
       <nav v-if="auth.isSignedIn" class="row">
         <RouterLink to="/groups">Groups</RouterLink>
+        <RouterLink to="/notifications">
+          Notifications
+          <span v-if="notifications.unread" class="badge count">{{ notifications.unread }}</span>
+        </RouterLink>
         <span class="spacer" />
         <span class="muted">{{ auth.user?.displayName }}</span>
         <button class="link" type="button" @click="signOut">Sign out</button>
@@ -62,6 +82,12 @@ nav a {
   color: var(--muted);
   text-decoration: none;
   font-weight: 500;
+}
+
+.count {
+  background: var(--accent);
+  color: #fff;
+  margin-left: 0.2rem;
 }
 
 nav a.router-link-active {
