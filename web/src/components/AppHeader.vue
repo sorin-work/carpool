@@ -42,7 +42,7 @@ function signOut() {
           <span v-if="notifications.unread" class="badge count">{{ notifications.unread }}</span>
         </RouterLink>
         <span class="spacer" />
-        <span class="muted">{{ auth.user?.displayName }}</span>
+        <RouterLink to="/profile">{{ auth.user?.displayName ?? 'Profile' }}</RouterLink>
         <button class="link" type="button" @click="signOut">Sign out</button>
       </nav>
     </div>
