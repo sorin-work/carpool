@@ -36,6 +36,7 @@ watch(
       <RouterLink :to="`/groups/${group.id}/costs`">Costs</RouterLink>
       <RouterLink :to="`/groups/${group.id}/trips`">Trips</RouterLink>
       <RouterLink :to="`/groups/${group.id}/members`">Members</RouterLink>
+      <RouterLink :to="`/groups/${group.id}/settings`">Settings</RouterLink>
     </nav>
     <RouterView />
   </section>
