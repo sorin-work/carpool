@@ -58,6 +58,11 @@ const router = createRouter({
           component: () => import('@/views/group/StatsPanel.vue'),
         },
         {
+          path: 'costs',
+          name: 'group-costs',
+          component: () => import('@/views/group/CostsPanel.vue'),
+        },
+        {
           path: 'trips',
           name: 'group-trips',
           component: () => import('@/views/group/TripsPanel.vue'),
