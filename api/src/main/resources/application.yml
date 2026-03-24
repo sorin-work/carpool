@@ -40,3 +40,5 @@ app:
     # Must be at least 32 characters. Override with JWT_SECRET outside local development.
     secret: ${JWT_SECRET:local-development-secret-change-me-0123456789}
     ttl: ${JWT_TTL:7d}
+  # Creates demo@carpool.local / demo-password with sample groups and rides.
+  seed-demo: ${SEED_DEMO:false}
