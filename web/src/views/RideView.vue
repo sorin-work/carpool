@@ -125,7 +125,10 @@ watch(rideId, load, { immediate: true })
       <ul v-else class="people">
         <li v-for="p in passengers" :key="p.id" class="row">
           <MemberAvatar :name="p.displayName" :size="28" />
-          {{ p.displayName }}
+          <span>
+            {{ p.displayName }}
+            <span v-if="p.pickupNote" class="muted note">· {{ p.pickupNote }}</span>
+          </span>
           <span class="spacer" />
           <span
             class="badge"
@@ -200,5 +203,9 @@ watch(rideId, load, { immediate: true })
 
 p {
   margin: 0;
+}
+
+.note {
+  font-size: 0.9rem;
 }
 </style>

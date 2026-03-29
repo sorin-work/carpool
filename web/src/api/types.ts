@@ -105,6 +105,7 @@ export interface Booking {
   memberId: number
   displayName: string
   status: BookingStatus
+  pickupNote?: string
   createdAt: string
 }
 
