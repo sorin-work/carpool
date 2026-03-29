@@ -6,6 +6,7 @@ import com.carpool.group.GroupAccess;
 import com.carpool.group.GroupMember;
 import com.carpool.ride.Ride;
 import com.carpool.ride.RideRepository;
+import com.carpool.ride.RideRules;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,11 +71,6 @@ public class BookingService {
     }
 
     private void requireOpen(Ride ride) {
-        if (ride.isCancelled()) {
-            throw ApiException.conflict("This ride was cancelled");
-        }
-        if (ride.hasDeparted(clock.instant())) {
-            throw ApiException.conflict("This ride has already left");
-        }
+        RideRules.requireOpen(ride, clock.instant());
     }
 }

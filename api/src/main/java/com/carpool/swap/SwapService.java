@@ -10,6 +10,7 @@ import com.carpool.notification.NotificationType;
 import com.carpool.ride.Ride;
 import com.carpool.ride.RideMessages;
 import com.carpool.ride.RideRepository;
+import com.carpool.ride.RideRules;
 import com.carpool.swap.dto.CreateSwapRequest;
 import com.carpool.swap.dto.SwapResponse;
 import org.springframework.stereotype.Service;
@@ -162,8 +163,6 @@ public class SwapService {
     }
 
     private void requireOpen(Ride ride) {
-        if (ride.isCancelled() || ride.hasDeparted(clock.instant())) {
-            throw ApiException.conflict(RideMessages.describe(ride).replace("**", "") + " is no longer open");
-        }
+        RideRules.requireOpen(ride, clock.instant());
     }
 }

@@ -178,13 +178,8 @@ public class RideService {
                 .toList();
     }
 
-    void requireOpen(Ride ride) {
-        if (ride.isCancelled()) {
-            throw ApiException.conflict("This ride was cancelled");
-        }
-        if (ride.hasDeparted(clock.instant())) {
-            throw ApiException.conflict("This ride has already left");
-        }
+    private void requireOpen(Ride ride) {
+        RideRules.requireOpen(ride, clock.instant());
     }
 
     /** Creates the rows for any ride in the range that has not been stored yet. */
