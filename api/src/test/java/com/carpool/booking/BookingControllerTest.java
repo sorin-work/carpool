@@ -111,4 +111,15 @@ class BookingControllerTest extends IntegrationTest {
                 .andExpect(jsonPath("$.seatsTaken").value(1))
                 .andExpect(jsonPath("$.waitlisted").value(1));
     }
+
+    @Test
+    void passengersShowTheirPickupNote() throws Exception {
+        Map<String, Object> riderOnly = new java.util.HashMap<>(Map.of("canDrive", false, "carSeats", 0));
+        riderOnly.put("pickupNote", "Bus stop on Oak Ave");
+        mvc.perform(putAs(ben, "/api/groups/{id}/members/me", groupId).content(toJson(riderOnly)));
+        mvc.perform(postAs(ben, "/api/rides/{id}/seat", rideId));
+
+        mvc.perform(getAs(ana, "/api/rides/{id}/passengers", rideId))
+                .andExpect(jsonPath("$[0].pickupNote").value("Bus stop on Oak Ave"));
+    }
 }
