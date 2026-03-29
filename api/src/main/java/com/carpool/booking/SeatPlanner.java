@@ -27,8 +27,19 @@ public class SeatPlanner {
         this.clock = clock;
     }
 
+    /** A driver cannot also hold a seat on their own ride. */
+    public void dropDriverBooking(Ride ride) {
+        if (ride.hasDriver()) {
+            bookings.findActive(ride.getId(), ride.getDriver().getId()).ifPresent(own -> {
+                own.setStatus(BookingStatus.CANCELLED, clock.instant());
+                bookings.flush();
+            });
+        }
+    }
+
     /** {@code actor} made the change and is not notified about it. */
     public List<SeatBooking> rebalance(Ride ride, GroupMember actor) {
+        dropDriverBooking(ride);
         List<SeatBooking> active = bookings.findActiveForRide(ride.getId());
         List<SeatBooking> confirmed = SeatAllocator.allocate(ride.hasDriver(), ride.getSeatsOffered(), active,
                 clock.instant());

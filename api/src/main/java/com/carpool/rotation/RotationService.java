@@ -1,6 +1,5 @@
 package com.carpool.rotation;
 
-import com.carpool.booking.BookingStatus;
 import com.carpool.booking.SeatBookingRepository;
 import com.carpool.booking.SeatPlanner;
 import com.carpool.common.ApiException;
@@ -77,10 +76,7 @@ public class RotationService {
                 continue;
             }
             GroupMember driver = plan.drivers().get(memberId);
-            bookings.findActive(ride.getId(), driver.getId())
-                    .ifPresent(own -> own.setStatus(BookingStatus.CANCELLED, clock.instant()));
             ride.assignDriver(driver, driver.getCarSeats());
-            bookings.flush();
             planner.rebalance(ride, me);
             if (!driver.getId().equals(me.getId())) {
                 notifications.notify(driver.getUser(), NotificationType.DRIVER_ASSIGNED,
