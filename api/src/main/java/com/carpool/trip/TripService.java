@@ -33,6 +33,7 @@ public class TripService {
     @Transactional
     public TripResponse create(Long groupId, Long userId, TripRequest request) {
         GroupMember admin = access.requireManager(groupId, userId);
+        validateDates(request);
         Trip trip = new Trip(admin.getGroup(), request.name().trim(), request.origin().trim(),
                 request.destination().trim(), request.departureTime(), request.days(), request.distanceKm(),
                 request.startsOn(), request.endsOn(), clock.instant());
@@ -50,6 +51,7 @@ public class TripService {
     public TripResponse update(Long tripId, Long userId, TripRequest request) {
         Trip trip = load(tripId);
         access.requireManager(trip.getGroup().getId(), userId);
+        validateDates(request);
         trip.setName(request.name().trim());
         trip.setOrigin(request.origin().trim());
         trip.setDestination(request.destination().trim());
@@ -74,6 +76,12 @@ public class TripService {
         Trip trip = load(tripId);
         access.requireManager(trip.getGroup().getId(), userId);
         trips.delete(trip);
+    }
+
+    private static void validateDates(TripRequest request) {
+        if (request.endsOn() != null && request.endsOn().isBefore(request.startsOn())) {
+            throw ApiException.badRequest("The last day cannot be before the first day");
+        }
     }
 
     Trip load(Long tripId) {

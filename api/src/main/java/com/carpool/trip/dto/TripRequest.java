@@ -1,8 +1,10 @@
 package com.carpool.trip.dto;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -17,7 +19,7 @@ public record TripRequest(
         @NotBlank @Size(max = 200) String destination,
         @NotNull LocalTime departureTime,
         @NotEmpty Set<DayOfWeek> days,
-        @NotNull BigDecimal distanceKm,
+        @NotNull @Positive @DecimalMax("2000") BigDecimal distanceKm,
         @NotNull LocalDate startsOn,
         LocalDate endsOn) {
 }

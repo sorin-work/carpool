@@ -74,6 +74,28 @@ class TripControllerTest extends IntegrationTest {
     }
 
     @Test
+    void rejectsAZeroOrNegativeDistance() throws Exception {
+        for (double km : new double[]{0, -4.5}) {
+            Map<String, Object> trip = schoolRun();
+            trip.put("distanceKm", km);
+
+            mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(trip)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.fields.distanceKm").exists());
+        }
+    }
+
+    @Test
+    void rejectsAnEndBeforeTheStart() throws Exception {
+        Map<String, Object> trip = schoolRun();
+        trip.put("endsOn", "2026-03-01");
+
+        mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(trip)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("The last day cannot be before the first day"));
+    }
+
+    @Test
     void updatesAndPausesATrip() throws Exception {
         long tripId = read(mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(schoolRun())))
                 .andReturn()).get("id").asLong();
