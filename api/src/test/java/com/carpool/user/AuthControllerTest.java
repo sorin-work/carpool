@@ -78,6 +78,34 @@ class AuthControllerTest extends IntegrationTest {
     }
 
     @Test
+    void changesThePassword() throws Exception {
+        String token = register("dan@example.com", "Dan");
+
+        mvc.perform(putAs(token, "/api/me/password")
+                        .content(toJson(Map.of("currentPassword", "correct-horse-1", "newPassword", "battery-staple-2"))))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(toJson(Map.of("email", "dan@example.com", "password", "battery-staple-2"))))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(toJson(Map.of("email", "dan@example.com", "password", "correct-horse-1"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void needsTheCurrentPasswordToChangeIt() throws Exception {
+        String token = register("dan@example.com", "Dan");
+
+        mvc.perform(putAs(token, "/api/me/password")
+                        .content(toJson(Map.of("currentPassword", "guess-guess", "newPassword", "battery-staple-2"))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(putAs(token, "/api/me/password")
+                        .content(toJson(Map.of("currentPassword", "correct-horse-1", "newPassword", "short"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void protectedEndpointsNeedAToken() throws Exception {
         mvc.perform(get("/api/groups"))
                 .andExpect(status().isUnauthorized())
