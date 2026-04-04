@@ -25,6 +25,8 @@ export const authApi = {
     http.post<AuthResponse>('/auth/register', { email, displayName, password }),
   me: () => http.get<User>('/me'),
   updateMe: (displayName: string) => http.put<User>('/me', { displayName }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    http.put<void>('/me/password', { currentPassword, newPassword }),
 }
 
 export const groupApi = {

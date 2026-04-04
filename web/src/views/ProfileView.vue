@@ -12,6 +12,24 @@ const displayName = ref(auth.user?.displayName ?? '')
 const error = ref('')
 const saved = ref(false)
 
+const currentPassword = ref('')
+const newPassword = ref('')
+const passwordError = ref('')
+const passwordSaved = ref(false)
+
+async function changePassword() {
+  passwordError.value = ''
+  passwordSaved.value = false
+  try {
+    await authApi.changePassword(currentPassword.value, newPassword.value)
+    currentPassword.value = ''
+    newPassword.value = ''
+    passwordSaved.value = true
+  } catch (e) {
+    passwordError.value = e instanceof ApiError ? e.message : 'Could not change the password'
+  }
+}
+
 async function save() {
   error.value = ''
   saved.value = false
@@ -42,6 +60,28 @@ async function save() {
       <div class="row">
         <button type="submit" class="primary">Save</button>
         <span v-if="saved" class="muted">Saved</span>
+      </div>
+    </form>
+    <form class="card" @submit.prevent="changePassword">
+      <h2>Password</h2>
+      <label>
+        Current password
+        <input v-model="currentPassword" type="password" autocomplete="current-password" required />
+      </label>
+      <label>
+        New password
+        <input
+          v-model="newPassword"
+          type="password"
+          autocomplete="new-password"
+          minlength="8"
+          required
+        />
+      </label>
+      <p v-if="passwordError" class="error">{{ passwordError }}</p>
+      <div class="row">
+        <button type="submit">Change password</button>
+        <span v-if="passwordSaved" class="muted">Password changed</span>
       </div>
     </form>
   </section>
