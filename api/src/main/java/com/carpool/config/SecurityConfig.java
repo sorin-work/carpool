@@ -2,6 +2,7 @@ package com.carpool.config;
 
 import com.carpool.security.JsonAuthenticationEntryPoint;
 import com.carpool.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,8 +36,9 @@ public class SecurityConfig {
                 .build();
     }
 
+    /** Tests lower the cost; production keeps BCrypt's default of 10. */
     @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    PasswordEncoder passwordEncoder(@Value("${app.bcrypt-strength:10}") int strength) {
+        return new BCryptPasswordEncoder(strength);
     }
 }
