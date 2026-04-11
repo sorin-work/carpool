@@ -3,7 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 
 import { rideApi } from '@/api'
 import { ApiError } from '@/api/client'
-import type { TripInput, Weekday } from '@/api/types'
+import type { Booking, TripInput, Weekday } from '@/api/types'
 import DayPicker from '@/components/DayPicker.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import RideActions from '@/components/RideActions.vue'
@@ -94,6 +94,24 @@ describe('RideActions', () => {
 
     expect(rideApi.requestSeat).toHaveBeenCalledWith(41)
     expect(wrapper.emitted('changed')).toHaveLength(1)
+  })
+
+  it('sends one request for a double click', async () => {
+    vi.mocked(rideApi.requestSeat).mockClear()
+    let finish: () => void = () => {}
+    vi.mocked(rideApi.requestSeat).mockReturnValueOnce(
+      new Promise<Booking>((resolve) => (finish = () => resolve({} as Booking))),
+    )
+    const wrapper = mount(RideActions, { props: { ride: ride(), me: member() } })
+
+    const button = wrapper.get('button.primary')
+    await button.trigger('click')
+    await button.trigger('click')
+    expect(button.attributes('disabled')).toBeDefined()
+    finish()
+    await flushPromises()
+
+    expect(rideApi.requestSeat).toHaveBeenCalledTimes(1)
   })
 
   it('offers drivers the wheel when nobody drives', () => {
