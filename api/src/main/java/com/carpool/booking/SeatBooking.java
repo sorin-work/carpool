@@ -76,6 +76,13 @@ public class SeatBooking {
         }
     }
 
+    /** Asking again after cancelling puts the rider at the back of the queue. */
+    public void reopen(Instant now) {
+        this.status = BookingStatus.PENDING;
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }

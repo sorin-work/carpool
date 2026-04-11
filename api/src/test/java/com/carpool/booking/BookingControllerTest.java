@@ -6,13 +6,29 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.carpool.group.GroupMemberRepository;
+import com.carpool.ride.RideRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+
+import java.time.Duration;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class BookingControllerTest extends IntegrationTest {
+
+    @Autowired
+    private SeatBookingRepository bookings;
+
+    @Autowired
+    private RideRepository rides;
+
+    @Autowired
+    private GroupMemberRepository members;
 
     private String ana;
     private String ben;
@@ -121,5 +137,32 @@ class BookingControllerTest extends IntegrationTest {
 
         mvc.perform(getAs(ana, "/api/rides/{id}/passengers", rideId))
                 .andExpect(jsonPath("$[0].pickupNote").value("Bus stop on Oak Ave"));
+    }
+
+    @Test
+    void theDatabaseRejectsASecondBookingForTheSameRider() throws Exception {
+        mvc.perform(postAs(ben, "/api/rides/{id}/seat", rideId));
+        long benId = members.findAllInGroup(groupId).stream()
+                .filter(m -> m.getDisplayName().equals("Ben")).findFirst().orElseThrow().getId();
+
+        // What a second, concurrent request would insert after passing the duplicate check.
+        assertThatThrownBy(() -> bookings.saveAndFlush(new SeatBooking(rides.getReferenceById(rideId),
+                members.getReferenceById(benId), clock.instant())))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void askingAgainAfterCancellingGoesToTheBackOfTheQueue() throws Exception {
+        mvc.perform(postAs(ana, "/api/rides/{id}/driver", rideId));
+        mvc.perform(postAs(ben, "/api/rides/{id}/seat", rideId));
+        mvc.perform(deleteAs(ben, "/api/rides/{id}/seat", rideId));
+        clock.advance(Duration.ofMinutes(1));
+        mvc.perform(postAs(cara, "/api/rides/{id}/seat", rideId));
+        clock.advance(Duration.ofMinutes(1));
+
+        mvc.perform(postAs(ben, "/api/rides/{id}/seat", rideId)).andExpect(status().isCreated());
+
+        mvc.perform(getAs(ben, "/api/rides/{id}", rideId)).andExpect(jsonPath("$.myBooking").value("WAITLISTED"));
+        mvc.perform(getAs(ben, "/api/rides/{id}/passengers", rideId)).andExpect(jsonPath("$", hasSize(2)));
     }
 }

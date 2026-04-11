@@ -30,4 +30,6 @@ public interface SeatBookingRepository extends JpaRepository<SeatBooking, Long> 
             order by b.createdAt, b.id
             """)
     List<SeatBooking> findActiveForRides(Collection<Long> rideIds);
+
+    Optional<SeatBooking> findByRideIdAndMemberId(Long rideId, Long memberId);
 }

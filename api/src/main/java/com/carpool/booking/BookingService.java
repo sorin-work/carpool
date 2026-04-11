@@ -7,6 +7,7 @@ import com.carpool.group.GroupMember;
 import com.carpool.ride.Ride;
 import com.carpool.ride.RideRepository;
 import com.carpool.ride.RideRules;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,8 @@ import java.util.List;
 
 @Service
 public class BookingService {
+
+    private static final String ALREADY_ASKED = "You already asked for a seat on this ride";
 
     private final SeatBookingRepository bookings;
     private final RideRepository rides;
@@ -39,10 +42,21 @@ public class BookingService {
         if (ride.isDrivenBy(me)) {
             throw ApiException.badRequest("You are driving this ride");
         }
-        if (bookings.findActive(rideId, me.getId()).isPresent()) {
-            throw ApiException.conflict("You already asked for a seat on this ride");
+        SeatBooking booking = bookings.findByRideIdAndMemberId(rideId, me.getId()).orElse(null);
+        if (booking != null && booking.getStatus().isActive()) {
+            throw ApiException.conflict(ALREADY_ASKED);
         }
-        SeatBooking booking = bookings.save(new SeatBooking(ride, me, clock.instant()));
+        if (booking != null) {
+            booking.reopen(clock.instant());
+        } else {
+            booking = new SeatBooking(ride, me, clock.instant());
+        }
+        try {
+            booking = bookings.saveAndFlush(booking);
+        } catch (DataIntegrityViolationException ex) {
+            // A second request from the same rider got in first.
+            throw ApiException.conflict(ALREADY_ASKED);
+        }
         planner.rebalance(ride, me);
         return BookingResponse.from(booking);
     }
