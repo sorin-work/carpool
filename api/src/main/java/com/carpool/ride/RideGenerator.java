@@ -5,7 +5,7 @@ import com.carpool.trip.Trip;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,12 +28,12 @@ public final class RideGenerator {
         if (!first.isBefore(last)) {
             return List.of();
         }
-        // Every ride of a trip leaves at the same local time, so look the offset up once.
-        ZoneOffset offset = zone.getRules().getOffset(first.atTime(trip.getDepartureTime()));
         List<PlannedRide> rides = new ArrayList<>();
         for (LocalDate date = first; date.isBefore(last); date = date.plusDays(1)) {
             if (trip.runsOn(date.getDayOfWeek())) {
-                rides.add(new PlannedRide(date, date.atTime(trip.getDepartureTime()).toInstant(offset)));
+                // The offset changes with daylight saving time, so resolve it for every date.
+                Instant departure = ZonedDateTime.of(date, trip.getDepartureTime(), zone).toInstant();
+                rides.add(new PlannedRide(date, departure));
             }
         }
         return rides;

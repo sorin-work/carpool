@@ -81,4 +81,27 @@ class RideGeneratorTest {
 
         assertThat(RideGenerator.plan(trip, BUCHAREST, LocalDate.of(2026, 3, 2), LocalDate.of(2026, 3, 16))).isEmpty();
     }
+
+    @Test
+    void keepsTheLocalTimeAcrossTheClockChange() {
+        // Bucharest moves from UTC+2 to UTC+3 on Sunday 29 March 2026.
+        Trip trip = trip(EnumSet.of(FRIDAY, MONDAY), LocalDate.of(2026, 1, 1), null);
+
+        List<PlannedRide> rides = RideGenerator.plan(trip, BUCHAREST, LocalDate.of(2026, 3, 27), LocalDate.of(2026, 3, 31));
+
+        assertThat(rides).containsExactly(
+                new PlannedRide(LocalDate.of(2026, 3, 27), Instant.parse("2026-03-27T05:45:00Z")),
+                new PlannedRide(LocalDate.of(2026, 3, 30), Instant.parse("2026-03-30T04:45:00Z")));
+    }
+
+    @Test
+    void keepsTheLocalTimeWhenTheClocksGoBack() {
+        Trip trip = trip(EnumSet.of(MONDAY), LocalDate.of(2026, 1, 1), null);
+
+        List<PlannedRide> rides = RideGenerator.plan(trip, ZoneId.of("America/New_York"),
+                LocalDate.of(2026, 10, 26), LocalDate.of(2026, 11, 3));
+
+        assertThat(rides).extracting(PlannedRide::departureAt).containsExactly(
+                Instant.parse("2026-10-26T11:45:00Z"), Instant.parse("2026-11-02T12:45:00Z"));
+    }
 }
