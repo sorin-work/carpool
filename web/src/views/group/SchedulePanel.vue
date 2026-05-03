@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { rideApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { ApiError, download } from '@/api/client'
 import type { Ride } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import RideActions from '@/components/RideActions.vue'
@@ -42,6 +42,15 @@ async function load() {
   }
 }
 
+async function downloadCalendar() {
+  if (!group.value) return
+  try {
+    await download(`/groups/${group.value.id}/calendar.ics`, 'carpool-rides.ics')
+  } catch (e) {
+    error.value = e instanceof ApiError ? e.message : 'Could not download the calendar'
+  }
+}
+
 function shift(days: number) {
   from.value = addDays(from.value, days)
 }
@@ -56,6 +65,10 @@ watch(from, load, { immediate: true })
       <strong>{{ formatDay(from) }} – {{ formatDay(addDays(to, -1)) }}</strong>
       <button type="button" aria-label="Next week" @click="shift(7)">→</button>
       <button type="button" class="link" @click="from = todayIn(group.timezone)">Today</button>
+      <span class="spacer" />
+      <button type="button" class="link" @click="downloadCalendar">
+        Add my rides to a calendar
+      </button>
     </div>
 
     <p v-if="loading" class="muted">Loading…</p>

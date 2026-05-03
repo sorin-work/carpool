@@ -86,6 +86,23 @@ export async function request<T>(
   return data as T
 }
 
+/** Fetches a file with the user's token and hands it to the browser as a download. */
+export async function download(path: string, filename: string): Promise<void> {
+  const token = getToken()
+  const response = await fetch(buildUrl(path), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, `Download failed (${response.status})`)
+  }
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 export const http = {
   get: <T>(path: string, params?: Params) => request<T>('GET', path, { params }),
   post: <T>(path: string, body?: unknown, params?: Params) =>
