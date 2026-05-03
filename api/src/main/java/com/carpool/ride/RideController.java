@@ -2,6 +2,7 @@ package com.carpool.ride;
 
 import com.carpool.ride.dto.CancelRideRequest;
 import com.carpool.ride.dto.DriveRequest;
+import com.carpool.ride.dto.MyRide;
 import com.carpool.ride.dto.RideResponse;
 import com.carpool.security.AuthUser;
 import jakarta.validation.Valid;
@@ -34,6 +35,12 @@ public class RideController {
                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return rideService.schedule(groupId, auth.id(), from, to);
+    }
+
+    @GetMapping("/me/rides")
+    public List<MyRide> mine(@AuthenticationPrincipal AuthUser auth,
+                             @RequestParam(defaultValue = "7") int days) {
+        return rideService.upcomingFor(auth.id(), Math.clamp(days, 1, 31));
     }
 
     @GetMapping("/rides/{rideId}")

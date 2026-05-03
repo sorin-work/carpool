@@ -7,6 +7,8 @@ import com.carpool.common.ApiException;
 import com.carpool.group.CarpoolGroup;
 import com.carpool.group.GroupAccess;
 import com.carpool.group.GroupMember;
+import com.carpool.group.GroupMemberRepository;
+import com.carpool.ride.dto.MyRide;
 import com.carpool.notification.NotificationService;
 import com.carpool.notification.NotificationType;
 import com.carpool.user.User;
@@ -20,6 +22,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +40,14 @@ public class RideService {
     private final SeatPlanner planner;
     private final SeatBookingRepository bookings;
     private final NotificationService notifications;
+    private final GroupMemberRepository members;
     private final Clock clock;
 
     public RideService(RideRepository rides, TripRepository trips, GroupAccess access, SeatPlanner planner,
-                       SeatBookingRepository bookings, NotificationService notifications, Clock clock) {
+                       SeatBookingRepository bookings, NotificationService notifications,
+                       GroupMemberRepository members, Clock clock) {
         this.notifications = notifications;
+        this.members = members;
         this.rides = rides;
         this.trips = trips;
         this.access = access;
@@ -68,6 +74,28 @@ public class RideService {
                 .filter(ride -> ride.getTrip().isActive() || ride.hasDeparted(clock.instant()))
                 .toList();
         return views(found, me);
+    }
+
+    /** Rides in the next {@code days} days, across all my groups, that I drive or have a seat on. */
+    @Transactional
+    public List<MyRide> upcomingFor(Long userId, int days) {
+        List<MyRide> result = new ArrayList<>();
+        for (GroupMember me : members.findAllForUser(userId)) {
+            CarpoolGroup group = me.getGroup();
+            LocalDate today = LocalDate.now(clock.withZone(group.getZone()));
+            materialize(group, today, today.plusDays(days));
+            List<Ride> open = rides.findForGroup(group.getId(), today, today.plusDays(days)).stream()
+                    .filter(r -> !r.hasDeparted(clock.instant()) && r.getTrip().isActive())
+                    .toList();
+            for (RideResponse view : views(open, me)) {
+                boolean driving = view.driver() != null && view.driver().memberId().equals(me.getId());
+                if (driving || view.myBooking() != null) {
+                    result.add(new MyRide(group.getId(), group.getName(), group.getZone().getId(), driving, view));
+                }
+            }
+        }
+        result.sort(Comparator.comparing(r -> r.ride().departureAt()));
+        return result;
     }
 
     @Transactional(readOnly = true)
