@@ -6,6 +6,7 @@ import { groupApi } from '@/api'
 import { ApiError } from '@/api/client'
 import type { GroupSummary } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
+import UpcomingRides from '@/components/UpcomingRides.vue'
 
 const router = useRouter()
 
@@ -69,6 +70,8 @@ onMounted(load)
 
 <template>
   <section class="stack">
+    <UpcomingRides />
+
     <h1>Your carpool groups</h1>
 
     <p v-if="loading" class="muted">Loading…</p>

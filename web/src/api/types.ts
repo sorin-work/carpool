@@ -99,6 +99,14 @@ export interface Ride {
   distanceKm: number
 }
 
+export interface MyRide {
+  groupId: number
+  groupName: string
+  timezone: string
+  driving: boolean
+  ride: Ride
+}
+
 export interface Booking {
   id: number
   rideId: number

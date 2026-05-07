@@ -8,6 +8,7 @@ import type {
   GroupStats,
   GroupSummary,
   Member,
+  MyRide,
   Notification,
   Page,
   Ride,
@@ -59,6 +60,7 @@ export const tripApi = {
 }
 
 export const rideApi = {
+  mine: (days = 7) => http.get<MyRide[]>('/me/rides', { days }),
   schedule: (groupId: number, from?: string, to?: string) =>
     http.get<Ride[]>(`/groups/${groupId}/rides`, { from, to }),
   get: (id: number) => http.get<Ride>(`/rides/${id}`),
