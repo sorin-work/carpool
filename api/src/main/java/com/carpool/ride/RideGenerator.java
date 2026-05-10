@@ -24,7 +24,9 @@ public final class RideGenerator {
      */
     public static List<PlannedRide> plan(Trip trip, ZoneId zone, LocalDate from, LocalDate to) {
         LocalDate first = from.isBefore(trip.getStartsOn()) ? trip.getStartsOn() : from;
-        LocalDate last = trip.getEndsOn() != null && trip.getEndsOn().isBefore(to) ? trip.getEndsOn() : to;
+        // endsOn is the trip's last day and is included; 'to' is exclusive.
+        LocalDate afterTrip = trip.getEndsOn() != null ? trip.getEndsOn().plusDays(1) : null;
+        LocalDate last = afterTrip != null && afterTrip.isBefore(to) ? afterTrip : to;
         if (!first.isBefore(last)) {
             return List.of();
         }

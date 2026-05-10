@@ -76,6 +76,23 @@ class RideGeneratorTest {
     }
 
     @Test
+    void theLastDayOfATripStillRuns() {
+        Trip trip = trip(EnumSet.range(MONDAY, FRIDAY), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 6));
+
+        List<PlannedRide> rides = RideGenerator.plan(trip, BUCHAREST, LocalDate.of(2026, 3, 2), LocalDate.of(2026, 3, 16));
+
+        assertThat(rides).hasSize(5);
+        assertThat(rides.get(4).date()).isEqualTo(LocalDate.of(2026, 3, 6));
+    }
+
+    @Test
+    void aOneDayTripRunsOnce() {
+        Trip trip = trip(EnumSet.of(WEDNESDAY), LocalDate.of(2026, 3, 4), LocalDate.of(2026, 3, 4));
+
+        assertThat(RideGenerator.plan(trip, BUCHAREST, LocalDate.of(2026, 3, 2), LocalDate.of(2026, 3, 9))).hasSize(1);
+    }
+
+    @Test
     void emptyWhenTheRangeIsOutsideTheTrip() {
         Trip trip = trip(EnumSet.of(MONDAY), LocalDate.of(2026, 5, 1), null);
 
