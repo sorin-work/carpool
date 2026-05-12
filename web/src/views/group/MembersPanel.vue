@@ -12,15 +12,17 @@ import { useGroupStore } from '@/stores/group'
 const store = useGroupStore()
 const { group, isManager, me } = storeToRefs(store)
 const error = ref('')
-const copied = ref(false)
+const copied = ref<'code' | 'link' | null>(null)
 
 const roleLabel: Record<string, string> = { OWNER: 'Owner', ADMIN: 'Admin', MEMBER: 'Member' }
 
-async function copyCode() {
+async function copy(what: 'code' | 'link') {
   if (!group.value) return
-  await navigator.clipboard?.writeText(group.value.inviteCode)
-  copied.value = true
-  setTimeout(() => (copied.value = false), 1500)
+  const text =
+    what === 'code' ? group.value.inviteCode : `${location.origin}/join/${group.value.inviteCode}`
+  await navigator.clipboard?.writeText(text)
+  copied.value = what
+  setTimeout(() => (copied.value = null), 1500)
 }
 
 async function newCode() {
@@ -64,7 +66,12 @@ async function remove(member: Member) {
         <code class="code">{{ group.inviteCode }}</code>
       </div>
       <span class="spacer" />
-      <button type="button" @click="copyCode">{{ copied ? 'Copied' : 'Copy' }}</button>
+      <button type="button" @click="copy('code')">
+        {{ copied === 'code' ? 'Copied' : 'Copy code' }}
+      </button>
+      <button type="button" @click="copy('link')">
+        {{ copied === 'link' ? 'Copied' : 'Copy link' }}
+      </button>
       <button v-if="isManager" type="button" @click="newCode">New code</button>
     </div>
 

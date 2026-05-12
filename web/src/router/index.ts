@@ -24,6 +24,11 @@ const router = createRouter({
       component: () => import('@/views/GroupsView.vue'),
     },
     {
+      path: '/join/:code',
+      name: 'join',
+      component: () => import('@/views/JoinView.vue'),
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/ProfileView.vue'),
