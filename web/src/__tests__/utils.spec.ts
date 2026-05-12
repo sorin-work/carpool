@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { addDays, describeDays, formatTime, shortTime, todayIn } from '@/utils/dates'
 import { avatarHue, initials } from '@/utils/initials'
-import { renderMessage } from '@/utils/message'
+import { escapeHtml, renderMessage } from '@/utils/message'
 import { formatCents, formatKm } from '@/utils/money'
 
 describe('dates', () => {
@@ -66,5 +66,19 @@ describe('notification messages', () => {
     expect(renderMessage('**Ana** will drive **School run**.')).toBe(
       '<strong>Ana</strong> will drive <strong>School run</strong>.',
     )
+  })
+})
+
+describe('notification markup', () => {
+  it('escapes html coming from trip names and reasons', () => {
+    const message = '**<img src=x onerror=alert(1)>** was cancelled: <script>steal()</script>'
+
+    expect(renderMessage(message)).toBe(
+      '<strong>&lt;img src=x onerror=alert(1)&gt;</strong> was cancelled: &lt;script&gt;steal()&lt;/script&gt;',
+    )
+  })
+
+  it('escapes quotes and ampersands', () => {
+    expect(escapeHtml(`Tom & "Jerry's" run`)).toBe('Tom &amp; &quot;Jerry&#39;s&quot; run')
   })
 })
