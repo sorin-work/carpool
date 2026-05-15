@@ -3,6 +3,7 @@ package com.carpool.ride;
 import com.carpool.ride.dto.CancelRideRequest;
 import com.carpool.ride.dto.DriveRequest;
 import com.carpool.ride.dto.MyRide;
+import com.carpool.ride.dto.RideNoteRequest;
 import com.carpool.ride.dto.RideResponse;
 import com.carpool.security.AuthUser;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -68,5 +70,11 @@ public class RideController {
     @PostMapping("/rides/{rideId}/reinstate")
     public RideResponse reinstate(@AuthenticationPrincipal AuthUser auth, @PathVariable Long rideId) {
         return rideService.reinstate(rideId, auth.id());
+    }
+
+    @PutMapping("/rides/{rideId}/note")
+    public RideResponse setNote(@AuthenticationPrincipal AuthUser auth, @PathVariable Long rideId,
+                                @Valid @RequestBody RideNoteRequest request) {
+        return rideService.setNote(rideId, auth.id(), request.note());
     }
 }

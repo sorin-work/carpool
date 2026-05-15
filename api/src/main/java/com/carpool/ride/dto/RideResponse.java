@@ -16,7 +16,7 @@ import java.util.List;
 public record RideResponse(Long id, Long tripId, String tripName, String origin, String destination,
                            LocalDate date, Instant departureAt, RideStatus status, String cancelReason,
                            DriverInfo driver, int seatsOffered, int seatsTaken, int waitlisted,
-                           BookingStatus myBooking, BigDecimal distanceKm) {
+                           BookingStatus myBooking, BigDecimal distanceKm, String note) {
 
     public static RideResponse from(Ride ride, List<SeatBooking> active, Long viewerMemberId) {
         var trip = ride.getTrip();
@@ -28,6 +28,7 @@ public record RideResponse(Long id, Long tripId, String tripName, String origin,
                 .findFirst().orElse(null);
         return new RideResponse(ride.getId(), trip.getId(), trip.getName(), trip.getOrigin(), trip.getDestination(),
                 ride.getRideDate(), ride.getDepartureAt(), ride.getStatus(), ride.getCancelReason(),
-                DriverInfo.of(ride.getDriver()), ride.getSeatsOffered(), taken, waiting, mine, trip.getDistanceKm());
+                DriverInfo.of(ride.getDriver()), ride.getSeatsOffered(), taken, waiting, mine, trip.getDistanceKm(),
+                ride.getNote());
     }
 }

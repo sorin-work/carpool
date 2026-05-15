@@ -162,6 +162,17 @@ public class RideService {
     }
 
     @Transactional
+    public RideResponse setNote(Long rideId, Long userId, String note) {
+        Ride ride = load(rideId);
+        GroupMember me = access.requireMember(ride.getTrip().getGroup().getId(), userId);
+        if (!ride.isDrivenBy(me) && !me.getRole().canManage()) {
+            throw ApiException.forbidden("Only the driver or an admin can change the note");
+        }
+        ride.setNote(note == null || note.isBlank() ? null : note.trim());
+        return view(ride, me);
+    }
+
+    @Transactional
     public RideResponse reinstate(Long rideId, Long userId) {
         Ride ride = load(rideId);
         GroupMember me = access.requireManager(ride.getTrip().getGroup().getId(), userId);

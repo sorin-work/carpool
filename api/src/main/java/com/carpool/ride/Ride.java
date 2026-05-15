@@ -50,6 +50,10 @@ public class Ride {
     @Column(name = "cancel_reason", length = 300)
     private String cancelReason;
 
+    /** Something the driver wants riders to know, e.g. "leaving from the back gate". */
+    @Column(length = 300)
+    private String note;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -129,6 +133,14 @@ public class Ride {
 
     public boolean hasDeparted(Instant now) {
         return !departureAt.isAfter(now);
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 
     public Instant getCreatedAt() {
