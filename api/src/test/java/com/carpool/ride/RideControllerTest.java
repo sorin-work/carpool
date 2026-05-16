@@ -142,4 +142,23 @@ class RideControllerTest extends IntegrationTest {
                 .andExpect(jsonPath("$.driver").doesNotExist())
                 .andExpect(jsonPath("$.seatsOffered").value(0));
     }
+
+    @Test
+    void theDriverLeavesANote() throws Exception {
+        long rideId = schedule(ana, "2026-03-03", "2026-03-04").get(0).get("id").asLong();
+        mvc.perform(postAs(ana, "/api/rides/{id}/driver", rideId));
+
+        mvc.perform(putAs(ana, "/api/rides/{id}/note", rideId).content(toJson(Map.of("note", " Back gate today "))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.note").value("Back gate today"));
+        mvc.perform(getAs(ben, "/api/rides/{id}", rideId)).andExpect(jsonPath("$.note").value("Back gate today"));
+    }
+
+    @Test
+    void ridersCannotChangeTheNote() throws Exception {
+        long rideId = schedule(ana, "2026-03-03", "2026-03-04").get(0).get("id").asLong();
+
+        mvc.perform(putAs(ben, "/api/rides/{id}/note", rideId).content(toJson(Map.of("note", "Free candy"))))
+                .andExpect(status().isForbidden());
+    }
 }
