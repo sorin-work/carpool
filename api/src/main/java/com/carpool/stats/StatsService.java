@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class StatsService {
@@ -55,11 +56,14 @@ public class StatsService {
         }
 
         List<Ride> completed = rides.findCompleted(groupId, start, end, clock.instant());
+        // One query for every booking in the period instead of one per ride.
+        Map<Long, List<SeatBooking>> confirmedByRide = completed.isEmpty() ? Map.of()
+                : bookings.findActiveForRides(completed.stream().map(Ride::getId).toList()).stream()
+                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
+                .collect(Collectors.groupingBy(b -> b.getRide().getId()));
         for (Ride ride : completed) {
             BigDecimal km = ride.getTrip().getDistanceKm();
-            List<SeatBooking> riders = bookings.findActiveForRide(ride.getId()).stream()
-                    .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
-                    .toList();
+            List<SeatBooking> riders = confirmedByRide.getOrDefault(ride.getId(), List.of());
             Tally driver = tallies.get(ride.getDriver().getId());
             if (driver != null) {
                 driver.drives++;

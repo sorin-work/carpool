@@ -6,12 +6,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.Instant;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class StatsControllerTest extends IntegrationTest {
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
 
     private String ana;
     private String ben;
@@ -97,5 +107,33 @@ class StatsControllerTest extends IntegrationTest {
         String eve = register("eve@example.com", "Eve");
 
         mvc.perform(getAs(eve, "/api/groups/{id}/stats", groupId)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void queryCountDoesNotGrowWithTheNumberOfRides() throws Exception {
+        clock.set(Instant.parse("2026-03-02T06:00:00Z"));
+        for (String time : new String[]{"12:30", "15:30"}) {
+            Map<String, Object> trip = Fixtures.schoolRun();
+            trip.put("name", "Run at " + time);
+            trip.put("departureTime", time);
+            mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(trip)));
+        }
+        JsonNode all = read(mvc.perform(getAs(ana, "/api/groups/{id}/rides", groupId)
+                .param("from", "2026-03-03").param("to", "2026-03-07")).andReturn());
+        for (JsonNode ride : all) {
+            if (!ride.has("driver")) {
+                mvc.perform(postAs(ana, "/api/rides/{id}/driver", ride.get("id").asLong()));
+                mvc.perform(postAs(cara, "/api/rides/{id}/seat", ride.get("id").asLong()));
+            }
+        }
+        clock.set(Instant.parse("2026-03-07T10:00:00Z"));
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.clear();
+
+        mvc.perform(getAs(cara, "/api/groups/{id}/stats", groupId).param("from", "2026-03-01").param("to", "2026-03-08"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rides").value(11));
+
+        assertThat(statistics.getPrepareStatementCount()).isLessThan(8);
     }
 }
