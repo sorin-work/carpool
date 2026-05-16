@@ -23,6 +23,7 @@ const bookingLabel: Record<string, string> = {
         {{ ride.tripName }}
       </RouterLink>
       <div class="muted">{{ ride.origin }} → {{ ride.destination }}</div>
+      <div v-if="ride.note" class="note">📌 {{ ride.note }}</div>
       <div class="row meta">
         <span v-if="ride.status === 'CANCELLED'" class="badge danger">Cancelled</span>
         <template v-else>
@@ -67,6 +68,10 @@ const bookingLabel: Record<string, string> = {
 
 .title:hover {
   color: var(--accent);
+}
+
+.note {
+  font-size: 0.9rem;
 }
 
 .meta {

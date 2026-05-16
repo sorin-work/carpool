@@ -97,6 +97,7 @@ export interface Ride {
   waitlisted: number
   myBooking?: BookingStatus
   distanceKm: number
+  note?: string
 }
 
 export interface MyRide {

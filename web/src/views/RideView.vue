@@ -63,6 +63,17 @@ async function act(action: () => Promise<Ride>) {
 const cancelRide = () => act(() => rideApi.cancel(rideId.value, reason.value || undefined))
 const reinstate = () => act(() => rideApi.reinstate(rideId.value))
 
+const editingNote = ref(false)
+const noteDraft = ref('')
+function editNote() {
+  noteDraft.value = ride.value?.note ?? ''
+  editingNote.value = true
+}
+async function saveNote() {
+  await act(() => rideApi.setNote(rideId.value, noteDraft.value))
+  editingNote.value = false
+}
+
 watch(swapTarget, async (target) => {
   swapOffered.value = ''
   targetRides.value = []
@@ -109,6 +120,17 @@ watch(rideId, load, { immediate: true })
         {{ ride.origin }} → {{ ride.destination }} · {{ ride.distanceKm }} km
       </p>
       <p v-if="ride.cancelReason" class="muted">Reason: {{ ride.cancelReason }}</p>
+      <form v-if="editingNote" class="row" @submit.prevent="saveNote">
+        <input v-model="noteDraft" maxlength="300" placeholder="Leaving from the back gate" />
+        <button type="submit" class="primary">Save note</button>
+        <button type="button" @click="editingNote = false">Cancel</button>
+      </form>
+      <p v-else-if="ride.note || iDrive || isManager" class="note-line">
+        <span v-if="ride.note">📌 {{ ride.note }}</span>
+        <button v-if="iDrive || isManager" type="button" class="link" @click="editNote">
+          {{ ride.note ? 'Edit note' : 'Add a note for riders' }}
+        </button>
+      </p>
       <p>
         <strong>Driver:</strong>
         {{ ride.driver ? ride.driver.displayName : 'nobody yet' }}
@@ -207,5 +229,11 @@ p {
 
 .note {
   font-size: 0.9rem;
+}
+
+.note-line {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
 }
 </style>
