@@ -115,6 +115,24 @@ class FairRotationTest {
     }
 
     @Test
+    void morningAndAfternoonGoToDifferentPeople() {
+        // Ana has driven less, but already has the morning run.
+        List<Slot> slots = List.of(new Slot(1L, MONDAY, 1), new Slot(2L, MONDAY, 1));
+        Map<Long, Long> result = FairRotation.assign(slots, List.of(
+                new Candidate(1L, 3, 0, null, Set.of()),
+                new Candidate(2L, 3, 3, null, Set.of())));
+
+        assertThat(result.values()).containsExactly(1L, 2L);
+    }
+
+    @Test
+    void theOnlyDriverStillTakesBothRuns() {
+        List<Slot> slots = List.of(new Slot(1L, MONDAY, 1), new Slot(2L, MONDAY, 1));
+
+        assertThat(FairRotation.assign(slots, List.of(fresh(1, 3))).values()).containsExactly(1L, 1L);
+    }
+
+    @Test
     void noCandidatesMeansNoDrivers() {
         assertThat(FairRotation.assign(weekdays(3, 1), List.of()).values()).containsOnlyNulls();
     }
