@@ -62,6 +62,22 @@ class FairRotationTest {
     }
 
     @Test
+    void onATieWhoeverDroveLongestAgoGoes() {
+        Map<Long, Long> result = FairRotation.assign(weekdays(1, 1), List.of(
+                new Candidate(1L, 3, 4, MONDAY.minusDays(3), Set.of()),
+                new Candidate(2L, 3, 4, MONDAY.minusDays(10), Set.of())));
+
+        assertThat(result.values()).containsExactly(2L);
+    }
+
+    @Test
+    void twoFreshDriversAlternate() {
+        Map<Long, Long> result = FairRotation.assign(weekdays(4, 1), List.of(fresh(1, 3), fresh(2, 3)));
+
+        assertThat(result.values()).containsExactly(1L, 2L, 1L, 2L);
+    }
+
+    @Test
     void equalHistoryFallsBackToMemberOrder() {
         Map<Long, Long> result = FairRotation.assign(weekdays(1, 1), List.of(fresh(7, 2), fresh(3, 2)));
 

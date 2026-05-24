@@ -37,7 +37,7 @@ public final class FairRotation {
             tallies.add(new Tally(candidate));
         }
         Comparator<Tally> fairest = Comparator.comparingInt((Tally t) -> t.drives)
-                .thenComparing(t -> t.lastDrove, Comparator.nullsFirst(Comparator.reverseOrder()))
+                .thenComparing(t -> t.lastDrove, Comparator.nullsFirst(Comparator.naturalOrder()))
                 .thenComparing(t -> t.candidate.memberId());
 
         Map<Long, Long> result = new LinkedHashMap<>();
