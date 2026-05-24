@@ -12,7 +12,8 @@ import java.util.Set;
 /**
  * Picks a driver for each ride so that driving is shared as evenly as possible. For every ride, in
  * departure order, the eligible member who has driven the fewest times takes it; ties go to whoever
- * has gone longest without driving, then to the longest-standing member.
+ * has gone longest without driving, then to the longest-standing member. Where possible nobody drives
+ * twice on the same day.
  */
 public final class FairRotation {
 
@@ -42,10 +43,17 @@ public final class FairRotation {
 
         Map<Long, Long> result = new LinkedHashMap<>();
         for (Slot slot : slots) {
-            Optional<Tally> pick = pick(slot, tallies, fairest, true);
+            // Preferences, strongest first: room for every rider, then not driving twice that day.
+            // A smaller car or a second run is still better than no driver at all.
+            Optional<Tally> pick = pick(slot, tallies, fairest, true, true);
             if (pick.isEmpty()) {
-                // Nobody has room for every rider: a smaller car is better than no car.
-                pick = pick(slot, tallies, fairest, false);
+                pick = pick(slot, tallies, fairest, true, false);
+            }
+            if (pick.isEmpty()) {
+                pick = pick(slot, tallies, fairest, false, true);
+            }
+            if (pick.isEmpty()) {
+                pick = pick(slot, tallies, fairest, false, false);
             }
             result.put(slot.rideId(), pick.map(t -> {
                 t.drives++;
@@ -56,11 +64,13 @@ public final class FairRotation {
         return result;
     }
 
-    private static Optional<Tally> pick(Slot slot, List<Tally> tallies, Comparator<Tally> order, boolean needRoom) {
+    private static Optional<Tally> pick(Slot slot, List<Tally> tallies, Comparator<Tally> order, boolean needRoom,
+                                        boolean onePerDay) {
         return tallies.stream()
                 .filter(t -> !t.candidate.away().contains(slot.date()))
                 .filter(t -> t.candidate.carSeats() > 0)
                 .filter(t -> !needRoom || t.candidate.carSeats() >= slot.seatsNeeded())
+                .filter(t -> !onePerDay || !slot.date().equals(t.lastDrove))
                 .min(order);
     }
 
