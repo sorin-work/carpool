@@ -57,26 +57,28 @@ watch(month, load, { immediate: true })
     </EmptyState>
 
     <template v-else>
-      <table class="card">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th class="num">Earned driving</th>
-            <th class="num">Owed for rides</th>
-            <th class="num">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="b in report.balances" :key="b.memberId">
-            <td>{{ b.displayName }}</td>
-            <td class="num">{{ money(b.earnedCents) }}</td>
-            <td class="num">{{ money(b.spentCents) }}</td>
-            <td class="num" :class="{ pos: b.balanceCents > 0, neg: b.balanceCents < 0 }">
-              {{ money(b.balanceCents) }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="card">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th class="num">Earned driving</th>
+              <th class="num">Owed for rides</th>
+              <th class="num">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="b in report.balances" :key="b.memberId">
+              <td>{{ b.displayName }}</td>
+              <td class="num">{{ money(b.earnedCents) }}</td>
+              <td class="num">{{ money(b.spentCents) }}</td>
+              <td class="num" :class="{ pos: b.balanceCents > 0, neg: b.balanceCents < 0 }">
+                {{ money(b.balanceCents) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <section class="card">
         <h3>To settle up</h3>

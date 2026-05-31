@@ -232,3 +232,23 @@ th.num {
   max-width: 24rem;
   margin: 3rem auto;
 }
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+@media (max-width: 40rem) {
+  .container {
+    padding: 1rem 0.75rem 3rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  th,
+  td {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.9rem;
+  }
+}

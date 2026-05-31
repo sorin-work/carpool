@@ -64,6 +64,17 @@ function signOut() {
   gap: 1.5rem;
 }
 
+@media (max-width: 40rem) {
+  .inner {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+
+  nav {
+    gap: 0.75rem;
+  }
+}
+
 .brand {
   display: flex;
   align-items: center;

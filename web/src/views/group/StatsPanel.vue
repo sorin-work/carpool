@@ -47,36 +47,38 @@ watch(period, load, { immediate: true })
     <EmptyState v-if="!stats.rides" title="No rides yet">
       Stats appear once rides have taken place.
     </EmptyState>
-    <table v-else class="card">
-      <thead>
-        <tr>
-          <th>Member</th>
-          <th class="num">Drives</th>
-          <th class="num">Driven</th>
-          <th class="num">Rides</th>
-          <th class="num">Share</th>
-          <th>Last drove</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="m in stats.members" :key="m.memberId">
-          <td>
-            <span class="row">
-              <MemberAvatar :name="m.displayName" :size="26" />
-              {{ m.displayName }}
-            </span>
-          </td>
-          <td class="num">
-            <span class="bar" :style="{ width: `${(m.drives / maxDrives) * 4}rem` }" />
-            {{ m.drives }}
-          </td>
-          <td class="num">{{ formatKm(m.kmDriven) }}</td>
-          <td class="num">{{ m.ridesTaken }}</td>
-          <td class="num">{{ m.driveShare }}%</td>
-          <td>{{ m.lastDrove ? formatDay(m.lastDrove) : '—' }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div v-else class="table-scroll">
+      <table class="card">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th class="num">Drives</th>
+            <th class="num">Driven</th>
+            <th class="num">Rides</th>
+            <th class="num">Share</th>
+            <th>Last drove</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="m in stats.members" :key="m.memberId">
+            <td>
+              <span class="row">
+                <MemberAvatar :name="m.displayName" :size="26" />
+                {{ m.displayName }}
+              </span>
+            </td>
+            <td class="num">
+              <span class="bar" :style="{ width: `${(m.drives / maxDrives) * 4}rem` }" />
+              {{ m.drives }}
+            </td>
+            <td class="num">{{ formatKm(m.kmDriven) }}</td>
+            <td class="num">{{ m.ridesTaken }}</td>
+            <td class="num">{{ m.driveShare }}%</td>
+            <td>{{ m.lastDrove ? formatDay(m.lastDrove) : '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 

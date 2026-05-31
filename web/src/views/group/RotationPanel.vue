@@ -94,25 +94,27 @@ watch([from, days], preview, { immediate: true })
         </span>
         <span v-if="unassigned" class="badge warning">{{ unassigned }} without a driver</span>
       </div>
-      <table class="card">
-        <thead>
-          <tr>
-            <th>Day</th>
-            <th>Trip</th>
-            <th>Driver</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in proposals" :key="p.rideId">
-            <td>{{ formatDay(p.date) }} {{ formatTime(p.departureAt, group.timezone) }}</td>
-            <td>{{ p.tripName }}</td>
-            <td>
-              <span v-if="p.displayName">{{ p.displayName }}</span>
-              <span v-else class="muted">Nobody available</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="card">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Trip</th>
+              <th>Driver</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in proposals" :key="p.rideId">
+              <td>{{ formatDay(p.date) }} {{ formatTime(p.departureAt, group.timezone) }}</td>
+              <td>{{ p.tripName }}</td>
+              <td>
+                <span v-if="p.displayName">{{ p.displayName }}</span>
+                <span v-else class="muted">Nobody available</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div v-if="isManager">
         <button type="button" class="primary" @click="apply">Assign these drivers</button>
       </div>
