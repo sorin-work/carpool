@@ -62,6 +62,19 @@ class NotificationControllerTest extends IntegrationTest {
     }
 
     @Test
+    void offersTheLastPartlyFilledPage() throws Exception {
+        send(5);
+
+        mvc.perform(getAs(token, "/api/notifications").param("size", "2"))
+                .andExpect(jsonPath("$.totalPages").value(3))
+                .andExpect(jsonPath("$.hasNext").value(true));
+        mvc.perform(getAs(token, "/api/notifications").param("page", "1").param("size", "2"))
+                .andExpect(jsonPath("$.hasNext").value(true));
+        mvc.perform(getAs(token, "/api/notifications").param("page", "2").param("size", "2"))
+                .andExpect(jsonPath("$.hasNext").value(false));
+    }
+
+    @Test
     void rejectsSillyPageSizes() throws Exception {
         mvc.perform(getAs(token, "/api/notifications").param("size", "0")).andExpect(status().isBadRequest());
         mvc.perform(getAs(token, "/api/notifications").param("size", "500")).andExpect(status().isBadRequest());
