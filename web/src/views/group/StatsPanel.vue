@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { statsApi } from '@/api'
+import { download } from '@/api/client'
 import type { GroupStats } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import MemberAvatar from '@/components/MemberAvatar.vue'
@@ -24,6 +25,15 @@ async function load() {
   stats.value = await statsApi.get(group.value.id, addDays(to, -period.value), to)
 }
 
+function exportCsv() {
+  if (!group.value || !stats.value) return
+  const { from, to } = stats.value
+  download(
+    `/groups/${group.value.id}/rides.csv?from=${from}&to=${to}`,
+    `rides-${from}-to-${to}.csv`,
+  )
+}
+
 watch(period, load, { immediate: true })
 </script>
 
@@ -32,6 +42,9 @@ watch(period, load, { immediate: true })
     <div class="row">
       <h2>Who drove</h2>
       <span class="spacer" />
+      <button type="button" class="link" :disabled="!stats.rides" @click="exportCsv">
+        Download CSV
+      </button>
       <select v-model.number="period" aria-label="Period">
         <option :value="30">Last 30 days</option>
         <option :value="90">Last 90 days</option>
