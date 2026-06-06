@@ -30,9 +30,18 @@ export function describeDays(days: Weekday[]): string {
   return sorted.map((d) => WEEKDAY_SHORT[d]).join(', ')
 }
 
+/**
+ * A calendar date ("2026-03-03") as a local Date at midnight. `new Date("2026-03-03")` would be
+ * midnight UTC, which is still the previous day anywhere west of Greenwich.
+ */
+export function parseDate(date: string): Date {
+  const [y, m, d] = date.split('-').map(Number)
+  return new Date(y!, m! - 1, d!)
+}
+
 /** A calendar date from the API ("2026-03-03") as "Tue 3 Mar". */
 export function formatDay(date: string): string {
-  return new Date(date).toLocaleDateString('en-GB', {
+  return parseDate(date).toLocaleDateString('en-GB', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
