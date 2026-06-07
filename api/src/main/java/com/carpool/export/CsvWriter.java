@@ -23,6 +23,10 @@ public final class CsvWriter {
             return "";
         }
         String text = value.toString();
+        if (value instanceof CharSequence && !text.isEmpty() && "=+-@\t\r".indexOf(text.charAt(0)) >= 0) {
+            // Spreadsheets run cells starting with these as formulas.
+            text = "'" + text;
+        }
         if (text.contains(",") || text.contains("\"") || text.contains("\n") || text.contains("\r")) {
             return "\"" + text.replace("\"", "\"\"") + "\"";
         }

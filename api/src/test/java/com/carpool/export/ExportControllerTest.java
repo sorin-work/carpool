@@ -53,4 +53,16 @@ class ExportControllerTest extends IntegrationTest {
 
         assertThat(csv).isEqualTo("\"Elm St, north\",\"say \"\"hi\"\"\",plain\r\n");
     }
+
+    @Test
+    void defusesSpreadsheetFormulas() {
+        String csv = new CsvWriter().row(List.of("=HYPERLINK(\"http://evil\")", "@SUM(A1)", "-5 km")).toString();
+
+        assertThat(csv).isEqualTo("\"'=HYPERLINK(\"\"http://evil\"\")\",'@SUM(A1),'-5 km\r\n");
+    }
+
+    @Test
+    void leavesNumbersAlone() {
+        assertThat(new CsvWriter().row(List.of(new java.math.BigDecimal("-1.5"))).toString()).isEqualTo("-1.5\r\n");
+    }
 }
