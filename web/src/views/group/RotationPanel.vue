@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { rotationApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import type { RotationProposal } from '@/api/types'
 import AbsenceList from '@/components/AbsenceList.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -38,7 +38,7 @@ async function preview() {
   try {
     proposals.value = await rotationApi.preview(group.value.id, from.value, to.value)
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not plan the rotation'
+    error.value = errorMessage(e, 'Could not plan the rotation')
   } finally {
     loading.value = false
   }
@@ -52,7 +52,7 @@ async function apply() {
     applied.value = true
     proposals.value = []
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not apply the rotation'
+    error.value = errorMessage(e, 'Could not apply the rotation')
   }
 }
 

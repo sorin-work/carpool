@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 
 import { groupApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import type { Member } from '@/api/types'
 
 const props = defineProps<{ groupId: number; member: Member }>()
@@ -37,7 +37,7 @@ async function save() {
     saved.value = true
     emit('saved', member)
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not save'
+    error.value = errorMessage(e, 'Could not save')
   } finally {
     busy.value = false
   }

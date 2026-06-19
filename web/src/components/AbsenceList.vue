@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 
 import { absenceApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import type { Absence } from '@/api/types'
 import { formatDay } from '@/utils/dates'
 
@@ -34,7 +34,7 @@ async function add() {
     await load()
     emit('changed')
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not save'
+    error.value = errorMessage(e, 'Could not save')
   }
 }
 

@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { rideApi, swapApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import type { Booking, Ride } from '@/api/types'
 import MemberAvatar from '@/components/MemberAvatar.vue'
 import RideActions from '@/components/RideActions.vue'
@@ -46,7 +46,7 @@ async function load() {
     ride.value = await rideApi.get(rideId.value)
     passengers.value = await rideApi.passengers(rideId.value)
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not load the ride'
+    error.value = errorMessage(e, 'Could not load the ride')
   }
 }
 
@@ -56,7 +56,7 @@ async function act(action: () => Promise<Ride>) {
     ride.value = await action()
     passengers.value = await rideApi.passengers(rideId.value)
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Something went wrong'
+    error.value = errorMessage(e, 'Something went wrong')
   }
 }
 
@@ -100,7 +100,7 @@ async function askSwap() {
     )
     swapSent.value = true
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not send the swap request'
+    error.value = errorMessage(e, 'Could not send the swap request')
   }
 }
 

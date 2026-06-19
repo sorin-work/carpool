@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
 
 import { swapApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import type { Swap } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import { useGroupStore } from '@/stores/group'
@@ -43,7 +43,7 @@ async function act(action: () => Promise<Swap>) {
     await action()
     await load()
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Something went wrong'
+    error.value = errorMessage(e, 'Something went wrong')
   }
 }
 

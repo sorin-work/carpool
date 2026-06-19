@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { groupApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { ApiError, errorMessage } from '@/api/client'
 import type { GroupSummary } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import UpcomingRides from '@/components/UpcomingRides.vue'
@@ -27,7 +27,7 @@ async function load() {
   try {
     groups.value = await groupApi.list()
   } catch (e) {
-    loadError.value = e instanceof ApiError ? e.message : 'Could not load your groups'
+    loadError.value = errorMessage(e, 'Could not load your groups')
   } finally {
     loading.value = false
   }
@@ -41,7 +41,7 @@ async function create() {
     const group = await groupApi.create(newName.value, newDescription.value || undefined, timezone)
     await router.push(`/groups/${group.id}`)
   } catch (e) {
-    createError.value = e instanceof ApiError ? e.message : 'Could not create the group'
+    createError.value = errorMessage(e, 'Could not create the group')
   } finally {
     busy.value = false
   }

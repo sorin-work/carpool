@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 
 import { groupApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import type { Member } from '@/api/types'
 import MemberAvatar from '@/components/MemberAvatar.vue'
 import MembershipForm from '@/components/MembershipForm.vue'
@@ -42,7 +42,7 @@ async function toggleAdmin(member: Member) {
       ),
     )
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not change the role'
+    error.value = errorMessage(e, 'Could not change the role')
   }
 }
 
@@ -53,7 +53,7 @@ async function remove(member: Member) {
     await groupApi.removeMember(group.value.id, member.id)
     await store.load(group.value.id)
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not remove the member'
+    error.value = errorMessage(e, 'Could not remove the member')
   }
 }
 </script>

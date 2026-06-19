@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 
 import { rideApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import type { Member, Ride } from '@/api/types'
 
 const props = defineProps<{ ride: Ride; me: Member }>()
@@ -24,7 +24,7 @@ async function run(action: () => Promise<unknown>) {
     await action()
     emit('changed')
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Something went wrong'
+    error.value = errorMessage(e, 'Something went wrong')
   } finally {
     busy.value = false
   }

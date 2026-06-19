@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -22,7 +22,7 @@ async function submit() {
     const next = typeof route.query.next === 'string' ? route.query.next : '/groups'
     await router.push(next.startsWith('/') ? next : '/groups')
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Sign-in failed'
+    error.value = errorMessage(e, 'Sign-in failed')
   } finally {
     busy.value = false
   }

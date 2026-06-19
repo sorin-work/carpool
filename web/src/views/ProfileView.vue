@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 
 import { authApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { errorMessage } from '@/api/client'
 import MemberAvatar from '@/components/MemberAvatar.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -26,7 +26,7 @@ async function changePassword() {
     newPassword.value = ''
     passwordSaved.value = true
   } catch (e) {
-    passwordError.value = e instanceof ApiError ? e.message : 'Could not change the password'
+    passwordError.value = errorMessage(e, 'Could not change the password')
   }
 }
 
@@ -37,7 +37,7 @@ async function save() {
     auth.user = await authApi.updateMe(displayName.value)
     saved.value = true
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not save'
+    error.value = errorMessage(e, 'Could not save')
   }
 }
 </script>

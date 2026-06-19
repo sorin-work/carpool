@@ -4,7 +4,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { groupApi } from '@/api'
-import { ApiError } from '@/api/client'
+import { ApiError, errorMessage } from '@/api/client'
 import { useGroupStore } from '@/stores/group'
 
 const store = useGroupStore()
@@ -59,7 +59,7 @@ async function leave() {
     await groupApi.leave(group.value.id)
     await router.push('/groups')
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not leave the group'
+    error.value = errorMessage(e, 'Could not leave the group')
   }
 }
 </script>

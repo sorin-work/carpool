@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { rideApi } from '@/api'
-import { ApiError, download } from '@/api/client'
+import { download, errorMessage } from '@/api/client'
 import type { Ride } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import RideActions from '@/components/RideActions.vue'
@@ -36,7 +36,7 @@ async function load() {
   try {
     rides.value = await rideApi.schedule(group.value.id, from.value, to.value)
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not load the schedule'
+    error.value = errorMessage(e, 'Could not load the schedule')
   } finally {
     loading.value = false
   }
@@ -47,7 +47,7 @@ async function downloadCalendar() {
   try {
     await download(`/groups/${group.value.id}/calendar.ics`, 'carpool-rides.ics')
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Could not download the calendar'
+    error.value = errorMessage(e, 'Could not download the calendar')
   }
 }
 

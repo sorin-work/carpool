@@ -10,6 +10,11 @@ export class ApiError extends Error {
   }
 }
 
+/** The message to show for a failed call: the server's own wording when there is one. */
+export function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError ? error.message : fallback
+}
+
 const TOKEN_KEY = 'carpool.token'
 
 let unauthorizedHandler: (() => void) | null = null
