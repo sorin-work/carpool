@@ -125,6 +125,28 @@ public class RideService {
         return view(ride, me);
     }
 
+    /** Admins can put any member with a car behind the wheel, e.g. after a phone call. */
+    @Transactional
+    public RideResponse assignDriver(Long rideId, Long userId, Long memberId) {
+        Ride ride = load(rideId);
+        GroupMember admin = access.requireManager(ride.getTrip().getGroup().getId(), userId);
+        requireOpen(ride);
+        GroupMember driver = members.findById(memberId)
+                .filter(m -> m.getGroup().getId().equals(admin.getGroup().getId()))
+                .orElseThrow(() -> ApiException.notFound("Member"));
+        if (!driver.isCanDrive()) {
+            throw ApiException.badRequest(driver.getDisplayName() + " has no car set up");
+        }
+        ride.assignDriver(driver, driver.getCarSeats());
+        planner.rebalance(ride, admin);
+        if (!driver.getId().equals(admin.getId())) {
+            notifications.notify(driver.getUser(), NotificationType.DRIVER_ASSIGNED,
+                    RideMessages.bold(admin.getDisplayName()) + " put you down to drive " + RideMessages.describe(ride) + ".",
+                    RideMessages.link(ride));
+        }
+        return view(ride, admin);
+    }
+
     @Transactional
     public RideResponse stopDriving(Long rideId, Long userId) {
         Ride ride = load(rideId);

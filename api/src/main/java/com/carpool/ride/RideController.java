@@ -77,4 +77,10 @@ public class RideController {
                                 @Valid @RequestBody RideNoteRequest request) {
         return rideService.setNote(rideId, auth.id(), request.note());
     }
+
+    @PutMapping("/rides/{rideId}/driver/{memberId}")
+    public RideResponse assignDriver(@AuthenticationPrincipal AuthUser auth, @PathVariable Long rideId,
+                                     @PathVariable Long memberId) {
+        return rideService.assignDriver(rideId, auth.id(), memberId);
+    }
 }
