@@ -62,6 +62,13 @@ async function act(action: () => Promise<Ride>) {
 
 const cancelRide = () => act(() => rideApi.cancel(rideId.value, reason.value || undefined))
 const reinstate = () => act(() => rideApi.reinstate(rideId.value))
+const pickedDriver = ref<number | ''>('')
+async function assign() {
+  if (!pickedDriver.value) return
+  const memberId = pickedDriver.value
+  await act(() => rideApi.assignDriver(rideId.value, memberId))
+  pickedDriver.value = ''
+}
 
 const editingNote = ref(false)
 const noteDraft = ref('')
@@ -137,6 +144,20 @@ watch(rideId, load, { immediate: true })
         <template v-if="ride.driver">· {{ ride.seatsOffered }} seats</template>
       </p>
       <RideActions v-if="me" :ride="ride" :me="me" @changed="load" />
+      <form v-if="isManager && open" class="row" @submit.prevent="assign">
+        <select v-model="pickedDriver" aria-label="Driver">
+          <option value="" disabled>Choose a driver…</option>
+          <option
+            v-for="d in drivers"
+            :key="d.id"
+            :value="d.id"
+            :disabled="d.id === ride.driver?.memberId"
+          >
+            {{ d.displayName }} ({{ d.carSeats }} seats)
+          </option>
+        </select>
+        <button type="submit" :disabled="!pickedDriver">Assign</button>
+      </form>
     </div>
 
     <p v-if="error" class="error">{{ error }}</p>

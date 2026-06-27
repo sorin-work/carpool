@@ -67,6 +67,7 @@ export const rideApi = {
   drive: (id: number, seats?: number) =>
     http.post<Ride>(`/rides/${id}/driver`, seats ? { seats } : undefined),
   stopDriving: (id: number) => http.delete<Ride>(`/rides/${id}/driver`),
+  assignDriver: (id: number, memberId: number) => http.put<Ride>(`/rides/${id}/driver/${memberId}`),
   cancel: (id: number, reason?: string) => http.post<Ride>(`/rides/${id}/cancel`, { reason }),
   reinstate: (id: number) => http.post<Ride>(`/rides/${id}/reinstate`),
   setNote: (id: number, note: string) => http.put<Ride>(`/rides/${id}/note`, { note }),
