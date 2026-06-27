@@ -161,4 +161,34 @@ class RideControllerTest extends IntegrationTest {
         mvc.perform(putAs(ben, "/api/rides/{id}/note", rideId).content(toJson(Map.of("note", "Free candy"))))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void adminsAssignADriver() throws Exception {
+        long rideId = schedule(ana, "2026-03-03", "2026-03-04").get(0).get("id").asLong();
+        long benId = read(mvc.perform(putAs(ben, "/api/groups/{id}/members/me", groupId).content(toJson(Fixtures.car(2))))
+                .andReturn()).get("id").asLong();
+
+        mvc.perform(putAs(ana, "/api/rides/{r}/driver/{m}", rideId, benId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.driver.displayName").value("Ben"))
+                .andExpect(jsonPath("$.seatsOffered").value(2));
+        mvc.perform(getAs(ben, "/api/notifications"))
+                .andExpect(jsonPath("$.items[0].type").value("DRIVER_ASSIGNED"));
+    }
+
+    @Test
+    void membersCannotAssignDrivers() throws Exception {
+        long rideId = schedule(ana, "2026-03-03", "2026-03-04").get(0).get("id").asLong();
+        long anaId = read(mvc.perform(getAs(ana, "/api/groups/{id}", groupId)).andReturn()).get("myMemberId").asLong();
+
+        mvc.perform(putAs(ben, "/api/rides/{r}/driver/{m}", rideId, anaId)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void assignedDriversNeedACar() throws Exception {
+        long rideId = schedule(ana, "2026-03-03", "2026-03-04").get(0).get("id").asLong();
+        long benId = read(mvc.perform(getAs(ben, "/api/groups/{id}", groupId)).andReturn()).get("myMemberId").asLong();
+
+        mvc.perform(putAs(ana, "/api/rides/{r}/driver/{m}", rideId, benId)).andExpect(status().isBadRequest());
+    }
 }
