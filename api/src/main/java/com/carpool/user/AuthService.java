@@ -21,9 +21,12 @@ public class AuthService {
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LoginThrottle throttle;
     private final Clock clock;
 
-    public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtService jwtService, Clock clock) {
+    public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtService jwtService,
+                       LoginThrottle throttle, Clock clock) {
+        this.throttle = throttle;
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -43,9 +46,18 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = users.findByEmailIgnoreCase(normalizeEmail(request.email()))
+        String email = normalizeEmail(request.email());
+        if (throttle.isBlocked(email)) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "Too many failed attempts. Try again in a few minutes.");
+        }
+        User user = users.findByEmailIgnoreCase(email)
                 .filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()))
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
+                .orElse(null);
+        if (user == null) {
+            throttle.failed(email);
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+        }
+        throttle.succeeded(email);
         return tokenFor(user);
     }
 
