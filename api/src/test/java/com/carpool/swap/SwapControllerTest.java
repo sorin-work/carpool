@@ -99,6 +99,19 @@ class SwapControllerTest extends IntegrationTest {
     }
 
     @Test
+    void onlyTheTargetAccepts() throws Exception {
+        String cara = register("cara@example.com", "Cara");
+        joinGroup(cara, read(mvc.perform(getAs(ana, "/api/groups/{id}", groupId)).andReturn()).get("inviteCode").asText());
+        long swapId = askBen(wednesday);
+
+        mvc.perform(postAs(cara, "/api/swaps/{id}/accept", swapId)).andExpect(status().isForbidden());
+        mvc.perform(postAs(ana, "/api/swaps/{id}/accept", swapId)).andExpect(status().isForbidden());
+
+        mvc.perform(getAs(ana, "/api/rides/{id}", tuesday)).andExpect(jsonPath("$.driver.displayName").value("Ana"));
+        mvc.perform(getAs(ben, "/api/groups/{id}/swaps", groupId)).andExpect(jsonPath("$[0].status").value("PENDING"));
+    }
+
+    @Test
     void onlyTheTargetDeclines() throws Exception {
         long swapId = askBen(null);
 

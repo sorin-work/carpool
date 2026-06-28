@@ -90,8 +90,10 @@ public class SwapService {
     @Transactional
     public SwapResponse accept(Long swapId, Long userId) {
         SwapRequest swap = load(swapId);
-        Long groupId = swap.getRide().getTrip().getGroup().getId();
-        access.requireMember(groupId, userId);
+        GroupMember me = access.requireMember(swap.getRide().getTrip().getGroup().getId(), userId);
+        if (!swap.getTarget().getId().equals(me.getId())) {
+            throw ApiException.forbidden("Only " + swap.getTarget().getDisplayName() + " can answer this swap");
+        }
         requirePending(swap);
         Ride ride = swap.getRide();
         GroupMember requester = swap.getRequester();
