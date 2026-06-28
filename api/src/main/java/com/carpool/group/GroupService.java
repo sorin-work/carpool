@@ -1,5 +1,6 @@
 package com.carpool.group;
 
+import com.carpool.booking.SeatPlanner;
 import com.carpool.common.ApiException;
 import com.carpool.group.dto.CreateGroupRequest;
 import com.carpool.group.dto.GroupDetail;
@@ -7,6 +8,12 @@ import com.carpool.group.dto.GroupSummary;
 import com.carpool.group.dto.MemberResponse;
 import com.carpool.group.dto.UpdateGroupRequest;
 import com.carpool.group.dto.UpdateMembershipRequest;
+import com.carpool.notification.NotificationService;
+import com.carpool.notification.NotificationType;
+import com.carpool.ride.Ride;
+import com.carpool.ride.RideMessages;
+import com.carpool.ride.RideRepository;
+import com.carpool.booking.SeatBookingRepository;
 import com.carpool.user.User;
 import com.carpool.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -26,10 +33,19 @@ public class GroupService {
     private final GroupMemberRepository members;
     private final UserRepository users;
     private final GroupAccess access;
+    private final RideRepository rides;
+    private final SeatBookingRepository bookings;
+    private final SeatPlanner planner;
+    private final NotificationService notifications;
     private final Clock clock;
 
     public GroupService(GroupRepository groups, GroupMemberRepository members, UserRepository users,
-                        GroupAccess access, Clock clock) {
+                        GroupAccess access, RideRepository rides, SeatBookingRepository bookings,
+                        SeatPlanner planner, NotificationService notifications, Clock clock) {
+        this.rides = rides;
+        this.bookings = bookings;
+        this.planner = planner;
+        this.notifications = notifications;
         this.groups = groups;
         this.members = members;
         this.users = users;
@@ -123,6 +139,7 @@ public class GroupService {
         if (me.getRole() == MemberRole.OWNER && members.countByGroupId(groupId) > 1) {
             throw ApiException.badRequest("Hand the group over to another member before leaving");
         }
+        handOverRides(me);
         members.delete(me);
         if (me.getRole() == MemberRole.OWNER) {
             groups.delete(me.getGroup());
@@ -139,7 +156,22 @@ public class GroupService {
         if (member.getRole() == MemberRole.OWNER) {
             throw ApiException.forbidden("The owner cannot be removed");
         }
+        handOverRides(member);
         members.delete(member);
+    }
+
+    /** Rides the departing member was going to drive go back to needing a driver. */
+    private void handOverRides(GroupMember leaving) {
+        for (Ride ride : rides.findUpcomingDrivenBy(leaving.getId(), clock.instant())) {
+            ride.clearDriver();
+            planner.rebalance(ride, leaving);
+            List<User> riders = bookings.findActiveForRide(ride.getId()).stream()
+                    .map(b -> b.getMember().getUser()).toList();
+            notifications.notifyAll(riders, NotificationType.DRIVER_LEFT,
+                    RideMessages.bold(leaving.getDisplayName()) + " left the group, so " + RideMessages.describe(ride)
+                            + " needs a new driver.", RideMessages.link(ride));
+        }
+        rides.flush();
     }
 
     @Transactional

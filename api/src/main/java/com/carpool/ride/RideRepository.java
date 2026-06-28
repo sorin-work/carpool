@@ -60,4 +60,7 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
               and r.status = com.carpool.ride.RideStatus.CANCELLED and r.departureAt <= :now
             """)
     int countCancelled(Long groupId, LocalDate from, LocalDate to, Instant now);
+
+    @Query("select r from Ride r join fetch r.trip t join fetch t.group where r.driver.id = :memberId and r.departureAt > :now")
+    List<Ride> findUpcomingDrivenBy(Long memberId, Instant now);
 }

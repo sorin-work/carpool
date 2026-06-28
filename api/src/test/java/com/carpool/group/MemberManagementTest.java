@@ -125,4 +125,23 @@ class MemberManagementTest extends IntegrationTest {
                         .content(toJson(Map.of("canDrive", true, "carSeats", 0))))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void ridesOfARemovedDriverNeedANewDriver() throws Exception {
+        mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(com.carpool.support.Fixtures.schoolRun())));
+        mvc.perform(putAs(ben, "/api/groups/{id}/members/me", groupId).content(toJson(com.carpool.support.Fixtures.car(3))));
+        long rideId = read(mvc.perform(getAs(ana, "/api/groups/{id}/rides", groupId)
+                .param("from", "2026-03-03").param("to", "2026-03-04")).andReturn()).get(0).get("id").asLong();
+        mvc.perform(postAs(ben, "/api/rides/{id}/driver", rideId));
+        mvc.perform(postAs(ana, "/api/rides/{id}/seat", rideId));
+
+        mvc.perform(deleteAs(ana, "/api/groups/{g}/members/{m}", groupId, benMemberId)).andExpect(status().isNoContent());
+
+        mvc.perform(getAs(ana, "/api/rides/{id}", rideId))
+                .andExpect(jsonPath("$.driver").doesNotExist())
+                .andExpect(jsonPath("$.seatsOffered").value(0))
+                .andExpect(jsonPath("$.myBooking").value("PENDING"));
+        mvc.perform(getAs(ana, "/api/notifications"))
+                .andExpect(jsonPath("$.items[0].type").value("DRIVER_LEFT"));
+    }
 }
