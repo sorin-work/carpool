@@ -106,6 +106,19 @@ class AuthControllerTest extends IntegrationTest {
     }
 
     @Test
+    void tooManyWrongPasswordsLockTheAccountForAWhile() throws Exception {
+        register("eve@example.com", "Eve");
+        for (int i = 0; i < 5; i++) {
+            mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                    .content(toJson(Map.of("email", "eve@example.com", "password", "wrong-" + i))));
+        }
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(toJson(Map.of("email", "eve@example.com", "password", "correct-horse-1"))))
+                .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
     void protectedEndpointsNeedAToken() throws Exception {
         mvc.perform(get("/api/groups"))
                 .andExpect(status().isUnauthorized())
