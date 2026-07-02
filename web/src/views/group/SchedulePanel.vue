@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { rideApi } from '@/api'
 import { download, errorMessage } from '@/api/client'
@@ -14,7 +15,15 @@ import { addDays, formatDay, todayIn } from '@/utils/dates'
 const store = useGroupStore()
 const { group, me } = storeToRefs(store)
 
-const from = ref(todayIn(group.value?.timezone ?? 'UTC'))
+const route = useRoute()
+const router = useRouter()
+
+// The week lives in the URL so the back button from a ride returns to it.
+const isDate = (value: unknown): value is string =>
+  typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+const from = ref(
+  isDate(route.query.week) ? route.query.week : todayIn(group.value?.timezone ?? 'UTC'),
+)
 const rides = ref<Ride[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -55,6 +64,9 @@ function shift(days: number) {
   from.value = addDays(from.value, days)
 }
 
+watch(from, (week) => {
+  router.replace({ query: { ...route.query, week } })
+})
 watch(from, load, { immediate: true })
 </script>
 
