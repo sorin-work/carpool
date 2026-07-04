@@ -1,6 +1,7 @@
 package com.carpool.cost;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,7 @@ public final class CostSplitter {
 
     /** The cost of a ride in cents. */
     public static long rideCostCents(BigDecimal distanceKm, BigDecimal costPerKm) {
-        return Math.round(distanceKm.doubleValue() * costPerKm.doubleValue() * 100);
+        return cents(distanceKm, costPerKm).setScale(0, RoundingMode.HALF_UP).longValueExact();
     }
 
     /** What each rider owes the driver for one ride, in cents. */
@@ -24,8 +25,14 @@ public final class CostSplitter {
         if (riders <= 0) {
             return 0;
         }
-        double share = distanceKm.doubleValue() * costPerKm.doubleValue() / (riders + 1);
-        return (long) (share * 100);
+        // Stay in decimal and round once, to the nearest cent: doubles truncated 69.99... down to 69.
+        return cents(distanceKm, costPerKm)
+                .divide(BigDecimal.valueOf(riders + 1L), 0, RoundingMode.HALF_UP)
+                .longValueExact();
+    }
+
+    private static BigDecimal cents(BigDecimal distanceKm, BigDecimal costPerKm) {
+        return distanceKm.multiply(costPerKm).movePointRight(2);
     }
 
     /**

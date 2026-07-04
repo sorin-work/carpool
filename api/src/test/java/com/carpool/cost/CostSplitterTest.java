@@ -37,4 +37,17 @@ class CostSplitterTest {
     void freeRidesWhenTheRateIsZero() {
         assertThat(CostSplitter.split(new BigDecimal("8"), BigDecimal.ZERO, 1L, List.of(2L))).isEmpty();
     }
+
+    @Test
+    void roundsSharesToTheNearestCent() {
+        // 12.3 km at 0.17 = 2.091, a third each = 0.697: riders pay 0.70, not 0.69.
+        assertThat(CostSplitter.riderShareCents(new BigDecimal("12.3"), new BigDecimal("0.17"), 2)).isEqualTo(70);
+    }
+
+    @Test
+    void sharesThatAreExactInDecimalStayExact() {
+        // 0.1 + 0.2 style trouble: 7 km at 0.3 = 2.10, two people = 1.05 each.
+        assertThat(CostSplitter.riderShareCents(new BigDecimal("7"), new BigDecimal("0.3"), 1)).isEqualTo(105);
+        assertThat(CostSplitter.rideCostCents(new BigDecimal("6.4"), new BigDecimal("0.185"))).isEqualTo(118);
+    }
 }
