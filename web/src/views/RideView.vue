@@ -10,6 +10,7 @@ import MemberAvatar from '@/components/MemberAvatar.vue'
 import RideActions from '@/components/RideActions.vue'
 import { useGroupStore } from '@/stores/group'
 import { addDays, formatDay, formatTime } from '@/utils/dates'
+import { formatCents } from '@/utils/money'
 
 const route = useRoute()
 const store = useGroupStore()
@@ -32,6 +33,13 @@ const open = computed(
     ride.value?.status === 'SCHEDULED' && new Date(ride.value.departureAt).getTime() > Date.now(),
 )
 const canCancel = computed(() => open.value && (iDrive.value || isManager.value))
+/** What each person in the car pays, if the group shares fuel costs. */
+const sharePerPerson = computed(() => {
+  const rate = Number(group.value?.costPerKm ?? 0)
+  if (!ride.value || !rate) return null
+  const people = Math.max(ride.value.seatsTaken, 0) + 1
+  return Math.round((ride.value.distanceKm * rate * 100) / people)
+})
 const otherDrivers = computed(() => drivers.value.filter((d) => d.id !== me.value?.id))
 
 const statusLabel: Record<string, string> = {
@@ -142,6 +150,9 @@ watch(rideId, load, { immediate: true })
         <strong>Driver:</strong>
         {{ ride.driver ? ride.driver.displayName : 'nobody yet' }}
         <template v-if="ride.driver">· {{ ride.seatsOffered }} seats</template>
+      </p>
+      <p v-if="sharePerPerson !== null && ride.seatsTaken" class="muted">
+        Fuel: about {{ formatCents(sharePerPerson, group.currency) }} per rider.
       </p>
       <RideActions v-if="me" :ride="ride" :me="me" @changed="load" />
       <form v-if="isManager && open" class="row" @submit.prevent="assign">
