@@ -5,8 +5,10 @@ import java.time.LocalDate;
 
 /**
  * Driving and riding totals for one member. {@code driveShare} is the percentage of the member's
- * trips (driven + ridden) where they were the driver.
+ * trips (driven + ridden) where they were the driver; {@code upcomingDrives} counts rides they are
+ * down to drive in the next two weeks.
  */
 public record MemberStats(Long memberId, String displayName, int drives, BigDecimal kmDriven, int ridesTaken,
-                          BigDecimal kmRidden, int passengersCarried, LocalDate lastDrove, int driveShare) {
+                          BigDecimal kmRidden, int passengersCarried, LocalDate lastDrove, int driveShare,
+                          int upcomingDrives) {
 }

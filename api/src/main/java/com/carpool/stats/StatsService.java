@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 public class StatsService {
 
     static final int DEFAULT_DAYS = 90;
+    static final int UPCOMING_DAYS = 14;
 
     private final GroupAccess access;
     private final GroupMemberRepository members;
@@ -82,6 +83,17 @@ public class StatsService {
             }
         }
 
+        // Rides already assigned for the next two weeks, so admins can see who is lined up.
+        LocalDate today = LocalDate.now(clock.withZone(me.getGroup().getZone()));
+        for (Ride ride : rides.findForGroup(groupId, today, today.plusDays(UPCOMING_DAYS))) {
+            if (ride.hasDriver() && !ride.isCancelled() && !ride.hasDeparted(clock.instant())) {
+                Tally t = tallies.get(ride.getDriver().getId());
+                if (t != null) {
+                    t.upcoming++;
+                }
+            }
+        }
+
         List<MemberStats> result = tallies.values().stream()
                 .map(Tally::toStats)
                 .sorted(Comparator.comparingInt(MemberStats::drives).reversed()
@@ -96,6 +108,7 @@ public class StatsService {
         int drives;
         int rides;
         int passengers;
+        int upcoming;
         BigDecimal kmDriven = BigDecimal.ZERO;
         BigDecimal kmRidden = BigDecimal.ZERO;
         LocalDate lastDrove;
@@ -108,7 +121,7 @@ public class StatsService {
             int total = drives + rides;
             int share = total == 0 ? 0 : Math.round(drives * 100f / total);
             return new MemberStats(member.getId(), member.getDisplayName(), drives, kmDriven, rides, kmRidden,
-                    passengers, lastDrove, share);
+                    passengers, lastDrove, share, upcoming);
         }
     }
 }
