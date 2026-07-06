@@ -70,6 +70,7 @@ watch(period, load, { immediate: true })
             <th class="num">Rides</th>
             <th class="num">Share</th>
             <th>Last drove</th>
+            <th class="num">Next 2 weeks</th>
           </tr>
         </thead>
         <tbody>
@@ -88,6 +89,7 @@ watch(period, load, { immediate: true })
             <td class="num">{{ m.ridesTaken }}</td>
             <td class="num">{{ m.driveShare }}%</td>
             <td>{{ m.lastDrove ? formatDay(m.lastDrove) : '—' }}</td>
+            <td class="num">{{ m.upcomingDrives || '—' }}</td>
           </tr>
         </tbody>
       </table>

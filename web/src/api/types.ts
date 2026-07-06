@@ -184,6 +184,7 @@ export interface MemberStats {
   passengersCarried: number
   lastDrove?: string
   driveShare: number
+  upcomingDrives: number
 }
 
 export interface GroupStats {
