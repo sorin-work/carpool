@@ -1,12 +1,6 @@
 export type Role = 'OWNER' | 'ADMIN' | 'MEMBER'
 export type Weekday =
-  | 'MONDAY'
-  | 'TUESDAY'
-  | 'WEDNESDAY'
-  | 'THURSDAY'
-  | 'FRIDAY'
-  | 'SATURDAY'
-  | 'SUNDAY'
+  'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY'
 export type RideStatus = 'SCHEDULED' | 'CANCELLED'
 export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'WAITLISTED' | 'CANCELLED'
 export type SwapStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED'
