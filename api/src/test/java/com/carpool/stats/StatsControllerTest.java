@@ -103,6 +103,17 @@ class StatsControllerTest extends IntegrationTest {
     }
 
     @Test
+    void countsDrivesThatAreStillAhead() throws Exception {
+        clock.set(Instant.parse("2026-03-02T06:00:00Z"));
+
+        mvc.perform(getAs(cara, "/api/groups/{id}/stats", groupId).param("from", "2026-02-01").param("to", "2026-03-02"))
+                .andExpect(jsonPath("$.members[0].displayName").value("Ana"))
+                .andExpect(jsonPath("$.members[0].upcomingDrives").value(2))
+                // Friday's ride is cancelled, so Ben only has Thursday.
+                .andExpect(jsonPath("$.members[1].upcomingDrives").value(1));
+    }
+
+    @Test
     void outsidersGetNothing() throws Exception {
         String eve = register("eve@example.com", "Eve");
 
