@@ -34,6 +34,10 @@ management:
     health:
       probes:
         enabled: true
+      group:
+        # Not ready until the database answers; liveness stays independent of it.
+        readiness:
+          include: readinessState,db
 
 app:
   jwt:
