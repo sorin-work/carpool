@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -241,6 +243,32 @@ public class RideService {
 
     private void requireOpen(Ride ride) {
         RideRules.requireOpen(ride, clock.instant());
+    }
+
+    /**
+     * Brings rides that are already planned in line with an edited trip: they move to the new time,
+     * and dates the trip no longer runs on are cancelled (telling anyone who was on them).
+     */
+    public void replan(Trip trip) {
+        ZoneId zone = trip.getGroup().getZone();
+        for (Ride ride : rides.findUpcomingForTrip(trip.getId(), clock.instant())) {
+            LocalDate date = ride.getRideDate();
+            boolean stillRuns = trip.runsOn(date.getDayOfWeek()) && !date.isBefore(trip.getStartsOn())
+                    && (trip.getEndsOn() == null || !date.isAfter(trip.getEndsOn()));
+            if (stillRuns || ride.isCancelled()) {
+                ride.moveTo(ZonedDateTime.of(date, trip.getDepartureTime(), zone).toInstant());
+                continue;
+            }
+            List<User> people = new ArrayList<>();
+            if (ride.hasDriver()) {
+                people.add(ride.getDriver().getUser());
+            }
+            bookings.findActiveForRide(ride.getId()).forEach(b -> people.add(b.getMember().getUser()));
+            ride.cancel("The trip no longer runs on this day");
+            notifications.notifyAll(people.stream().distinct().toList(), NotificationType.RIDE_CANCELLED,
+                    RideMessages.describe(ride) + " no longer runs after a change to the trip.",
+                    RideMessages.link(ride));
+        }
     }
 
     /** Creates the rows for any ride in the range that has not been stored yet. */

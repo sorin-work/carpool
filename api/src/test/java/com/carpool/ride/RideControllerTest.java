@@ -191,4 +191,38 @@ class RideControllerTest extends IntegrationTest {
 
         mvc.perform(putAs(ana, "/api/rides/{r}/driver/{m}", rideId, benId)).andExpect(status().isBadRequest());
     }
+
+    @Test
+    void editingATripMovesItsPlannedRides() throws Exception {
+        schedule(ana, "2026-03-03", "2026-03-10");
+        Map<String, Object> changed = Fixtures.schoolRun();
+        changed.put("departureTime", "08:10");
+        changed.put("days", java.util.List.of("MONDAY", "WEDNESDAY", "FRIDAY"));
+
+        mvc.perform(putAs(ana, "/api/trips/{id}", tripId).content(toJson(changed))).andExpect(status().isOk());
+
+        JsonNode rides = schedule(ana, "2026-03-03", "2026-03-10");
+        java.util.List<JsonNode> running = new java.util.ArrayList<>();
+        rides.forEach(r -> {
+            if (r.get("status").asText().equals("SCHEDULED")) {
+                running.add(r);
+            }
+        });
+        assertThat(running).hasSize(3);
+        assertThat(running.get(0).get("date").asText()).isEqualTo("2026-03-04");
+        assertThat(running.get(0).get("departureAt").asText()).isEqualTo("2026-03-04T06:10:00Z");
+    }
+
+    @Test
+    void ridersOfDroppedDatesAreTold() throws Exception {
+        long tuesday = schedule(ana, "2026-03-03", "2026-03-04").get(0).get("id").asLong();
+        mvc.perform(postAs(ben, "/api/rides/{id}/seat", tuesday));
+        Map<String, Object> changed = Fixtures.schoolRun();
+        changed.put("days", java.util.List.of("MONDAY"));
+
+        mvc.perform(putAs(ana, "/api/trips/{id}", tripId).content(toJson(changed)));
+
+        mvc.perform(getAs(ben, "/api/rides/{id}", tuesday)).andExpect(jsonPath("$.status").value("CANCELLED"));
+        mvc.perform(getAs(ben, "/api/notifications")).andExpect(jsonPath("$.items[0].type").value("RIDE_CANCELLED"));
+    }
 }

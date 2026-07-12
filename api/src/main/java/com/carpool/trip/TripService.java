@@ -3,6 +3,7 @@ package com.carpool.trip;
 import com.carpool.common.ApiException;
 import com.carpool.group.GroupAccess;
 import com.carpool.group.GroupMember;
+import com.carpool.ride.RideService;
 import com.carpool.trip.dto.TripRequest;
 import com.carpool.trip.dto.TripResponse;
 import org.springframework.stereotype.Service;
@@ -16,9 +17,11 @@ public class TripService {
 
     private final TripRepository trips;
     private final GroupAccess access;
+    private final RideService rideService;
     private final Clock clock;
 
-    public TripService(TripRepository trips, GroupAccess access, Clock clock) {
+    public TripService(TripRepository trips, GroupAccess access, RideService rideService, Clock clock) {
+        this.rideService = rideService;
         this.trips = trips;
         this.access = access;
         this.clock = clock;
@@ -60,6 +63,7 @@ public class TripService {
         trip.setDistanceKm(request.distanceKm());
         trip.setStartsOn(request.startsOn());
         trip.setEndsOn(request.endsOn());
+        rideService.replan(trip);
         return TripResponse.from(trip);
     }
 

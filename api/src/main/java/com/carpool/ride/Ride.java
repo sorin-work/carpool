@@ -83,6 +83,10 @@ public class Ride {
         return departureAt;
     }
 
+    public void moveTo(Instant departureAt) {
+        this.departureAt = departureAt;
+    }
+
     public GroupMember getDriver() {
         return driver;
     }
