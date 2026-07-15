@@ -94,6 +94,9 @@ async function save() {
         <small v-if="fields.endsOn" class="error">{{ fields.endsOn }}</small>
       </label>
     </div>
+    <p v-if="trip" class="muted hint">
+      Rides already planned move to the new time; anyone on a day the trip no longer runs is told.
+    </p>
     <p v-if="error && !Object.keys(fields).length" class="error">{{ error }}</p>
     <div class="row">
       <button type="submit" class="primary" :disabled="busy">
@@ -109,6 +112,11 @@ async function save() {
   display: grid;
   gap: 0.9rem;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.hint {
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 .label {
