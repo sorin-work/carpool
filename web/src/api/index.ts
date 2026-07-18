@@ -57,6 +57,8 @@ export const tripApi = {
   pause: (id: number) => http.post<Trip>(`/trips/${id}/pause`),
   resume: (id: number) => http.post<Trip>(`/trips/${id}/resume`),
   remove: (id: number) => http.delete<void>(`/trips/${id}`),
+  cancelDays: (id: number, from: string, to: string, reason?: string) =>
+    http.post<{ cancelled: number }>(`/trips/${id}/cancel-days`, { from, to, reason }),
 }
 
 export const rideApi = {

@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue'
 
 import { tripApi } from '@/api'
 import type { Trip, TripInput } from '@/api/types'
+import CancelDaysForm from '@/components/CancelDaysForm.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import TripForm from '@/components/TripForm.vue'
 import { useGroupStore } from '@/stores/group'
@@ -16,6 +17,13 @@ const trips = ref<Trip[]>([])
 const loading = ref(true)
 const adding = ref(false)
 const editing = ref<number | null>(null)
+const cancelling = ref<number | null>(null)
+const notice = ref('')
+
+function cancelled(count: number) {
+  cancelling.value = null
+  notice.value = count === 1 ? '1 ride cancelled.' : `${count} rides cancelled.`
+}
 
 async function load() {
   if (!group.value) return
@@ -62,6 +70,8 @@ onMounted(load)
       </button>
     </div>
 
+    <p v-if="notice" class="badge">{{ notice }}</p>
+
     <TripForm v-if="adding" :submit="create" @cancel="adding = false" />
 
     <p v-if="loading" class="muted">Loading…</p>
@@ -84,6 +94,7 @@ onMounted(load)
           <span class="spacer" />
           <template v-if="isManager">
             <button type="button" class="link" @click="editing = trip.id">Edit</button>
+            <button type="button" class="link" @click="cancelling = trip.id">Cancel days</button>
             <button type="button" class="link" @click="toggle(trip)">
               {{ trip.active ? 'Pause' : 'Resume' }}
             </button>
@@ -96,6 +107,12 @@ onMounted(load)
           {{ formatDay(trip.startsOn) }}
           <template v-if="trip.endsOn"> until {{ formatDay(trip.endsOn) }}</template>
         </p>
+        <CancelDaysForm
+          v-if="cancelling === trip.id"
+          :trip="trip"
+          @done="cancelled"
+          @close="cancelling = null"
+        />
       </article>
     </template>
   </div>
