@@ -1,6 +1,7 @@
 package com.carpool.trip;
 
 import com.carpool.security.AuthUser;
+import com.carpool.trip.dto.CancelRangeRequest;
 import com.carpool.trip.dto.TripRequest;
 import com.carpool.trip.dto.TripResponse;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -65,5 +67,11 @@ public class TripController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId) {
         tripService.delete(tripId, auth.id());
+    }
+
+    @PostMapping("/trips/{tripId}/cancel-days")
+    public Map<String, Integer> cancelDays(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId,
+                                           @Valid @RequestBody CancelRangeRequest request) {
+        return Map.of("cancelled", tripService.cancelRange(tripId, auth.id(), request));
     }
 }

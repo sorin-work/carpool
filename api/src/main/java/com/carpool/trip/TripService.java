@@ -4,6 +4,7 @@ import com.carpool.common.ApiException;
 import com.carpool.group.GroupAccess;
 import com.carpool.group.GroupMember;
 import com.carpool.ride.RideService;
+import com.carpool.trip.dto.CancelRangeRequest;
 import com.carpool.trip.dto.TripRequest;
 import com.carpool.trip.dto.TripResponse;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,8 @@ import java.util.List;
 
 @Service
 public class TripService {
+
+    static final int MAX_CANCEL_DAYS = 62;
 
     private final TripRepository trips;
     private final GroupAccess access;
@@ -73,6 +76,19 @@ public class TripService {
         access.requireManager(trip.getGroup().getId(), userId);
         trip.setActive(active);
         return TripResponse.from(trip);
+    }
+
+    @Transactional
+    public int cancelRange(Long tripId, Long userId, CancelRangeRequest request) {
+        Trip trip = load(tripId);
+        GroupMember admin = access.requireManager(trip.getGroup().getId(), userId);
+        if (request.to().isBefore(request.from())) {
+            throw ApiException.badRequest("The last day cannot be before the first day");
+        }
+        if (request.from().plusDays(MAX_CANCEL_DAYS).isBefore(request.to())) {
+            throw ApiException.badRequest("Cancel at most " + MAX_CANCEL_DAYS + " days at once; pause the trip for longer breaks");
+        }
+        return rideService.cancelRange(trip, admin, request.from(), request.to(), request.reason());
     }
 
     @Transactional

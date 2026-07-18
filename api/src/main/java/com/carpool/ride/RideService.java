@@ -245,6 +245,26 @@ public class RideService {
         RideRules.requireOpen(ride, clock.instant());
     }
 
+    /** Cancels every ride of a trip between two dates (both included), e.g. for school holidays. */
+    @Transactional
+    public int cancelRange(Trip trip, GroupMember admin, LocalDate from, LocalDate to, String reason) {
+        CarpoolGroup group = trip.getGroup();
+        materialize(group, from, to.plusDays(1));
+        String why = reason == null || reason.isBlank() ? null : reason.trim();
+        int cancelled = 0;
+        for (Ride ride : rides.findForGroup(group.getId(), from, to.plusDays(1))) {
+            if (!ride.getTrip().getId().equals(trip.getId()) || ride.isCancelled() || ride.hasDeparted(clock.instant())) {
+                continue;
+            }
+            ride.cancel(why);
+            String message = RideMessages.describe(ride) + " was cancelled by " + RideMessages.bold(admin.getDisplayName())
+                    + (why != null ? ": " + why : ".");
+            notifications.notifyAll(affected(ride, admin), NotificationType.RIDE_CANCELLED, message, RideMessages.link(ride));
+            cancelled++;
+        }
+        return cancelled;
+    }
+
     /**
      * Brings rides that are already planned in line with an edited trip: they move to the new time,
      * and dates the trip no longer runs on are cancelled (telling anyone who was on them).
