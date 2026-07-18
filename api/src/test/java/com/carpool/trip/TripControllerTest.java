@@ -129,4 +129,33 @@ class TripControllerTest extends IntegrationTest {
 
         mvc.perform(getAs(eve, "/api/groups/{id}/trips", groupId)).andExpect(status().isNotFound());
     }
+
+    @Test
+    void cancelsTheRidesOfAHoliday() throws Exception {
+        long tripId = read(mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(schoolRun())))
+                .andReturn()).get("id").asLong();
+
+        mvc.perform(postAs(ana, "/api/trips/{id}/cancel-days", tripId)
+                        .content(toJson(Map.of("from", "2026-03-09", "to", "2026-03-13", "reason", "Spring break"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cancelled").value(5));
+
+        mvc.perform(getAs(ben, "/api/groups/{id}/rides", groupId).param("from", "2026-03-09").param("to", "2026-03-16"))
+                .andExpect(jsonPath("$[0].status").value("CANCELLED"))
+                .andExpect(jsonPath("$[0].cancelReason").value("Spring break"))
+                .andExpect(jsonPath("$[4].status").value("CANCELLED"));
+    }
+
+    @Test
+    void onlyAdminsCancelDays() throws Exception {
+        long tripId = read(mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(schoolRun())))
+                .andReturn()).get("id").asLong();
+
+        mvc.perform(postAs(ben, "/api/trips/{id}/cancel-days", tripId)
+                        .content(toJson(Map.of("from", "2026-03-09", "to", "2026-03-13"))))
+                .andExpect(status().isForbidden());
+        mvc.perform(postAs(ana, "/api/trips/{id}/cancel-days", tripId)
+                        .content(toJson(Map.of("from", "2026-03-13", "to", "2026-03-09"))))
+                .andExpect(status().isBadRequest());
+    }
 }
