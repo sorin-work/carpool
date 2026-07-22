@@ -28,10 +28,12 @@ public class CostService {
     private final GroupMemberRepository members;
     private final RideRepository rides;
     private final SeatBookingRepository bookings;
+    private final PaymentRepository payments;
     private final Clock clock;
 
     public CostService(GroupAccess access, GroupMemberRepository members, RideRepository rides,
-                       SeatBookingRepository bookings, Clock clock) {
+                       SeatBookingRepository bookings, PaymentRepository payments, Clock clock) {
+        this.payments = payments;
         this.access = access;
         this.members = members;
         this.rides = rides;
@@ -74,15 +76,49 @@ public class CostService {
                     });
         }
 
+        List<Payment> paid = payments.findInPeriod(groupId, start, end);
+        Map<Long, Long> settled = new HashMap<>();
+        for (Payment p : paid) {
+            settled.merge(p.getFrom().getId(), p.getAmountCents(), Long::sum);
+            settled.merge(p.getTo().getId(), -p.getAmountCents(), Long::sum);
+        }
+
         List<MemberBalance> balances = members.findAllInGroup(groupId).stream()
                 .map(m -> {
                     long in = earned.getOrDefault(m.getId(), 0L);
                     long out = spent.getOrDefault(m.getId(), 0L);
-                    return new MemberBalance(m.getId(), m.getDisplayName(), in, out, in - out);
+                    long net = settled.getOrDefault(m.getId(), 0L);
+                    return new MemberBalance(m.getId(), m.getDisplayName(), in, out, net, in - out + net);
                 })
                 .sorted(Comparator.comparingLong(MemberBalance::balanceCents).reversed())
                 .toList();
         return new CostReport(start, end, group.getCurrency(), group.getCostPerKm(), total, balances,
-                SettlementPlanner.settle(balances));
+                SettlementPlanner.settle(balances), paid.stream().map(PaymentResponse::from).toList());
+    }
+
+    /** Either side of the payment, or an admin, can record it. */
+    @Transactional
+    public PaymentResponse record(Long groupId, Long userId, PaymentRequest request) {
+        GroupMember me = access.requireMember(groupId, userId);
+        GroupMember from = memberOf(groupId, request.fromMemberId());
+        GroupMember to = memberOf(groupId, request.toMemberId());
+        if (from.getId().equals(to.getId())) {
+            throw ApiException.badRequest("A payment needs two different members");
+        }
+        boolean involved = me.getId().equals(from.getId()) || me.getId().equals(to.getId());
+        if (!involved && !me.getRole().canManage()) {
+            throw ApiException.forbidden("Only the two people involved or an admin can record a payment");
+        }
+        LocalDate paidOn = request.paidOn() != null ? request.paidOn()
+                : LocalDate.now(clock.withZone(me.getGroup().getZone()));
+        Payment payment = payments.save(new Payment(me.getGroup(), from, to, request.amountCents(), paidOn, me,
+                clock.instant()));
+        return PaymentResponse.from(payment);
+    }
+
+    private GroupMember memberOf(Long groupId, Long memberId) {
+        return members.findById(memberId)
+                .filter(m -> m.getGroup().getId().equals(groupId))
+                .orElseThrow(() -> ApiException.notFound("Member"));
     }
 }

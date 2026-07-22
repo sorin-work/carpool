@@ -5,5 +5,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record CostReport(LocalDate from, LocalDate to, String currency, BigDecimal costPerKm, long totalCents,
-                         List<MemberBalance> balances, List<SettlementPlanner.Transfer> settlements) {
+                         List<MemberBalance> balances, List<SettlementPlanner.Transfer> settlements,
+                         List<PaymentResponse> payments) {
 }
