@@ -3,14 +3,32 @@ import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { costApi } from '@/api'
-import type { CostReport } from '@/api/types'
+import { errorMessage } from '@/api/client'
+import type { CostReport, Transfer } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import { useGroupStore } from '@/stores/group'
 import { todayIn } from '@/utils/dates'
 import { formatCents } from '@/utils/money'
 
 const store = useGroupStore()
-const { group } = storeToRefs(store)
+const { group, isManager } = storeToRefs(store)
+const error = ref('')
+
+function canRecord(t: Transfer) {
+  const me = group.value?.myMemberId
+  return isManager.value || t.fromMemberId === me || t.toMemberId === me
+}
+
+async function markPaid(t: Transfer) {
+  if (!group.value) return
+  error.value = ''
+  try {
+    await costApi.recordPayment(group.value.id, t.fromMemberId, t.toMemberId, t.amountCents)
+    await load()
+  } catch (e) {
+    error.value = errorMessage(e, 'Could not record the payment')
+  }
+}
 
 const month = ref(todayIn(group.value?.timezone ?? 'UTC').slice(0, 7))
 const report = ref<CostReport | null>(null)
@@ -87,8 +105,20 @@ watch(month, load, { immediate: true })
           <li v-for="t in report.settlements" :key="`${t.fromMemberId}-${t.toMemberId}`">
             <strong>{{ t.fromName }}</strong> pays <strong>{{ t.toName }}</strong>
             {{ money(t.amountCents) }}
+            <button v-if="canRecord(t)" type="button" class="link" @click="markPaid(t)">
+              Mark as paid
+            </button>
           </li>
         </ul>
+        <p v-if="error" class="error">{{ error }}</p>
+        <template v-if="report.payments.length">
+          <h3>Paid this month</h3>
+          <ul class="transfers muted">
+            <li v-for="p in report.payments" :key="p.id">
+              {{ p.fromName }} paid {{ p.toName }} {{ money(p.amountCents) }}
+            </li>
+          </ul>
+        </template>
       </section>
     </template>
   </div>

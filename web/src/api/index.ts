@@ -11,6 +11,7 @@ import type {
   MyRide,
   Notification,
   Page,
+  Payment,
   Ride,
   RotationProposal,
   Swap,
@@ -116,4 +117,6 @@ export const statsApi = {
 export const costApi = {
   get: (groupId: number, from?: string, to?: string) =>
     http.get<CostReport>(`/groups/${groupId}/costs`, { from, to }),
+  recordPayment: (groupId: number, fromMemberId: number, toMemberId: number, amountCents: number) =>
+    http.post<Payment>(`/groups/${groupId}/payments`, { fromMemberId, toMemberId, amountCents }),
 }

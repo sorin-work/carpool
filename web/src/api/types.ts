@@ -194,7 +194,18 @@ export interface MemberBalance {
   displayName: string
   earnedCents: number
   spentCents: number
+  settledCents: number
   balanceCents: number
+}
+
+export interface Payment {
+  id: number
+  fromMemberId: number
+  fromName: string
+  toMemberId: number
+  toName: string
+  amountCents: number
+  paidOn: string
 }
 
 export interface Transfer {
@@ -213,4 +224,5 @@ export interface CostReport {
   totalCents: number
   balances: MemberBalance[]
   settlements: Transfer[]
+  payments: Payment[]
 }
