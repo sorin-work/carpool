@@ -4,6 +4,7 @@ import com.carpool.group.dto.ChangeRoleRequest;
 import com.carpool.group.dto.CreateGroupRequest;
 import com.carpool.group.dto.GroupDetail;
 import com.carpool.group.dto.GroupSummary;
+import com.carpool.group.dto.InvitePreview;
 import com.carpool.group.dto.JoinGroupRequest;
 import com.carpool.group.dto.MemberResponse;
 import com.carpool.group.dto.UpdateGroupRequest;
@@ -49,6 +50,11 @@ public class GroupController {
     @PostMapping("/join")
     public GroupDetail join(@AuthenticationPrincipal AuthUser auth, @Valid @RequestBody JoinGroupRequest request) {
         return groupService.join(auth.id(), request.inviteCode());
+    }
+
+    @GetMapping("/invite/{code}")
+    public InvitePreview preview(@AuthenticationPrincipal AuthUser auth, @PathVariable String code) {
+        return groupService.preview(auth.id(), code);
     }
 
     @GetMapping("/{groupId}")

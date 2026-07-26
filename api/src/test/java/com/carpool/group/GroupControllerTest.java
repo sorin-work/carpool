@@ -90,4 +90,18 @@ class GroupControllerTest extends IntegrationTest {
         mvc.perform(getAs(eve, "/api/groups/{id}", group.get("id").asLong()))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void previewsAGroupFromItsInviteCode() throws Exception {
+        String ana = register("ana@example.com", "Ana");
+        String ben = register("ben@example.com", "Ben");
+        JsonNode group = createGroup(ana, "Office");
+
+        mvc.perform(getAs(ben, "/api/groups/invite/{code}", group.get("inviteCode").asText().toLowerCase()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Office"))
+                .andExpect(jsonPath("$.memberCount").value(1))
+                .andExpect(jsonPath("$.alreadyMember").value(false));
+        mvc.perform(getAs(ben, "/api/groups/invite/{code}", "NOPE2345")).andExpect(status().isNotFound());
+    }
 }

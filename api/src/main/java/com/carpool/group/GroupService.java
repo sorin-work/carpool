@@ -5,6 +5,7 @@ import com.carpool.common.ApiException;
 import com.carpool.group.dto.CreateGroupRequest;
 import com.carpool.group.dto.GroupDetail;
 import com.carpool.group.dto.GroupSummary;
+import com.carpool.group.dto.InvitePreview;
 import com.carpool.group.dto.MemberResponse;
 import com.carpool.group.dto.UpdateGroupRequest;
 import com.carpool.group.dto.UpdateMembershipRequest;
@@ -77,6 +78,15 @@ public class GroupService {
         List<MemberResponse> all = members.findAllInGroup(groupId).stream().map(MemberResponse::from).toList();
         return new GroupDetail(group.getId(), group.getName(), group.getDescription(), group.getZone().getId(),
                 group.getInviteCode(), group.getCostPerKm(), group.getCurrency(), me.getRole(), me.getId(), all);
+    }
+
+    /** What someone holding an invite link sees before they decide to join. */
+    @Transactional(readOnly = true)
+    public InvitePreview preview(Long userId, String inviteCode) {
+        CarpoolGroup group = groups.findByInviteCode(InviteCodes.normalize(inviteCode))
+                .orElseThrow(() -> ApiException.notFound("Invite code"));
+        return new InvitePreview(group.getName(), group.getDescription(), members.countByGroupId(group.getId()),
+                members.findByGroupIdAndUserId(group.getId(), userId).isPresent());
     }
 
     @Transactional
