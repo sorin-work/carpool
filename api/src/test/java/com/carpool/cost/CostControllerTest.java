@@ -90,4 +90,41 @@ class CostControllerTest extends IntegrationTest {
         mvc.perform(patchAs(ana, "/api/groups/{id}", groupId).content(toJson(Map.of("currency", "euro"))))
                 .andExpect(status().isBadRequest());
     }
+
+    private long memberId(String name) throws Exception {
+        for (JsonNode m : read(mvc.perform(getAs(ana, "/api/groups/{id}", groupId)).andReturn()).get("members")) {
+            if (m.get("displayName").asText().equals(name)) {
+                return m.get("id").asLong();
+            }
+        }
+        throw new IllegalArgumentException(name);
+    }
+
+    @Test
+    void paymentsSettleTheBalance() throws Exception {
+        mvc.perform(postAs(ben, "/api/groups/{id}/payments", groupId).content(toJson(Map.of(
+                        "fromMemberId", memberId("Ben"), "toMemberId", memberId("Ana"), "amountCents", 200))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.paidOn").value("2026-03-06"));
+
+        mvc.perform(getAs(ana, "/api/groups/{id}/costs", groupId))
+                .andExpect(jsonPath("$.payments", hasSize(1)))
+                .andExpect(jsonPath("$.balances[0].displayName").value("Ana"))
+                .andExpect(jsonPath("$.balances[0].balanceCents").value(80))
+                .andExpect(jsonPath("$.settlements", hasSize(1)))
+                .andExpect(jsonPath("$.settlements[0].fromName").value("Cara"));
+    }
+
+    @Test
+    void outsidersOfAPaymentCannotRecordIt() throws Exception {
+        mvc.perform(postAs(cara, "/api/groups/{id}/payments", groupId).content(toJson(Map.of(
+                        "fromMemberId", memberId("Ben"), "toMemberId", memberId("Ana"), "amountCents", 200))))
+                .andExpect(status().isForbidden());
+        mvc.perform(postAs(ana, "/api/groups/{id}/payments", groupId).content(toJson(Map.of(
+                        "fromMemberId", memberId("Ana"), "toMemberId", memberId("Ana"), "amountCents", 200))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(postAs(ana, "/api/groups/{id}/payments", groupId).content(toJson(Map.of(
+                        "fromMemberId", memberId("Ben"), "toMemberId", memberId("Ana"), "amountCents", 0))))
+                .andExpect(status().isBadRequest());
+    }
 }
