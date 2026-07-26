@@ -36,6 +36,10 @@ export const groupApi = {
   get: (id: number) => http.get<GroupDetail>(`/groups/${id}`),
   create: (name: string, description?: string, timezone?: string) =>
     http.post<GroupDetail>('/groups', { name, description, timezone }),
+  preview: (inviteCode: string) =>
+    http.get<{ name: string; description?: string; memberCount: number; alreadyMember: boolean }>(
+      `/groups/invite/${encodeURIComponent(inviteCode)}`,
+    ),
   join: (inviteCode: string) => http.post<GroupDetail>('/groups/join', { inviteCode }),
   update: (id: number, changes: Partial<Omit<GroupDetail, 'members'>>) =>
     http.patch<GroupDetail>(`/groups/${id}`, changes),
