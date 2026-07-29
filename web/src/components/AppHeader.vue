@@ -12,11 +12,20 @@ const route = useRoute()
 
 let timer: ReturnType<typeof setInterval> | undefined
 
+// Coming back to the tab is when people expect the badge to be current.
+function onVisible() {
+  if (document.visibilityState === 'visible' && auth.isSignedIn) notifications.refresh()
+}
+
 onMounted(() => {
   if (auth.isSignedIn) notifications.refresh()
   timer = setInterval(() => auth.isSignedIn && notifications.refresh(), 60_000)
+  document.addEventListener('visibilitychange', onVisible)
 })
-onUnmounted(() => clearInterval(timer))
+onUnmounted(() => {
+  clearInterval(timer)
+  document.removeEventListener('visibilitychange', onVisible)
+})
 watch(
   () => route.fullPath,
   () => auth.isSignedIn && notifications.refresh(),
