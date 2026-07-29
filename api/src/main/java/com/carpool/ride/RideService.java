@@ -1,6 +1,5 @@
 package com.carpool.ride;
 
-import com.carpool.booking.SeatBooking;
 import com.carpool.booking.SeatBookingRepository;
 import com.carpool.booking.SeatPlanner;
 import com.carpool.common.ApiException;
@@ -27,9 +26,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class RideService {
@@ -43,11 +40,13 @@ public class RideService {
     private final SeatBookingRepository bookings;
     private final NotificationService notifications;
     private final GroupMemberRepository members;
+    private final RideViews rideViews;
     private final Clock clock;
 
     public RideService(RideRepository rides, TripRepository trips, GroupAccess access, SeatPlanner planner,
                        SeatBookingRepository bookings, NotificationService notifications,
-                       GroupMemberRepository members, Clock clock) {
+                       GroupMemberRepository members, RideViews rideViews, Clock clock) {
+        this.rideViews = rideViews;
         this.notifications = notifications;
         this.members = members;
         this.rides = rides;
@@ -227,18 +226,11 @@ public class RideService {
     }
 
     RideResponse view(Ride ride, GroupMember viewer) {
-        return views(List.of(ride), viewer).get(0);
+        return rideViews.of(ride, viewer);
     }
 
     List<RideResponse> views(List<Ride> list, GroupMember viewer) {
-        if (list.isEmpty()) {
-            return List.of();
-        }
-        Map<Long, List<SeatBooking>> byRide = bookings.findActiveForRides(list.stream().map(Ride::getId).toList())
-                .stream().collect(Collectors.groupingBy(b -> b.getRide().getId()));
-        return list.stream()
-                .map(ride -> RideResponse.from(ride, byRide.getOrDefault(ride.getId(), List.of()), viewer.getId()))
-                .toList();
+        return rideViews.of(list, viewer);
     }
 
     private void requireOpen(Ride ride) {
