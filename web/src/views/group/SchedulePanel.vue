@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { rideApi } from '@/api'
@@ -64,6 +64,16 @@ function shift(days: number) {
   from.value = addDays(from.value, days)
 }
 
+function onKey(event: KeyboardEvent) {
+  const target = event.target as HTMLElement | null
+  if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
+  if (event.key === 'ArrowLeft') shift(-7)
+  if (event.key === 'ArrowRight') shift(7)
+}
+
+onMounted(() => window.addEventListener('keydown', onKey))
+onUnmounted(() => window.removeEventListener('keydown', onKey))
+
 watch(from, (week) => {
   router.replace({ query: { ...route.query, week } })
 })
@@ -73,9 +83,13 @@ watch(from, load, { immediate: true })
 <template>
   <div v-if="group" class="stack">
     <div class="row">
-      <button type="button" aria-label="Previous week" @click="shift(-7)">←</button>
+      <button type="button" aria-label="Previous week" title="Previous week (←)" @click="shift(-7)">
+        ←
+      </button>
       <strong>{{ formatDay(from) }} – {{ formatDay(addDays(to, -1)) }}</strong>
-      <button type="button" aria-label="Next week" @click="shift(7)">→</button>
+      <button type="button" aria-label="Next week" title="Next week (→)" @click="shift(7)">
+        →
+      </button>
       <button type="button" class="link" @click="from = todayIn(group.timezone)">Today</button>
       <span class="spacer" />
       <button type="button" class="link" @click="downloadCalendar">
