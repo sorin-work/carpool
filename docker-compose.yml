@@ -26,6 +26,7 @@ services:
       DATABASE_USER: ${POSTGRES_USER:-carpool}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-carpool}
       JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me-0123456789}
+      JWT_TTL: ${JWT_TTL:-7d}
       # Creates demo@carpool.local / demo-password with sample groups and rides.
       SEED_DEMO: ${SEED_DEMO:-true}
     depends_on:
