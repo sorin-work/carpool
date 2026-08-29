@@ -43,6 +43,17 @@ describe('initials', () => {
     expect(initials('  ')).toBe('?')
   })
 
+  it('keeps emoji and other astral characters whole', () => {
+    expect(initials('🚗 Dad')).toBe('🚗D')
+    expect(initials('𝓐nna Lee')).toBe('𝓐L')
+    expect(initials('👩‍👧 Family Pool')).toBe('👩‍👧P')
+  })
+
+  it('keeps combining accents with their letter', () => {
+    expect(initials('e\u0301lise Dupont')).toBe('E\u0301D')
+    expect(initials('Ștefan Ionescu')).toBe('ȘI')
+  })
+
   it('gives the same colour to the same name', () => {
     expect(avatarHue('Ana')).toBe(avatarHue('Ana'))
     expect(avatarHue('Ana')).toBeLessThan(360)
