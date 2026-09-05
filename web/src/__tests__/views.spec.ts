@@ -58,6 +58,23 @@ describe('LoginView', () => {
     expect(router.currentRoute.value.path).toBe('/groups')
   })
 
+  it('does not follow a next link to another site', async () => {
+    vi.mocked(authApi.login).mockResolvedValue({
+      token: 't',
+      expiresAt: '',
+      user: { id: 1, email: 'a@example.com', displayName: 'Ana', createdAt: '' },
+    })
+    const router = makeRouter()
+    router.push('/login?next=//evil.example/phish')
+    await router.isReady()
+    const wrapper = mount(LoginView, { global: { plugins: [router] } })
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/groups')
+  })
+
   it('shows why sign-in failed', async () => {
     vi.mocked(authApi.login).mockRejectedValue(new ApiError(401, 'Invalid email or password'))
     const router = makeRouter()

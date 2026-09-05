@@ -6,6 +6,14 @@ import { errorMessage } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
+
+/**
+ * Only follow paths inside the app. "//evil.example" also starts with a slash but is read by the
+ * browser as another host.
+ */
+function safeNext(next: unknown): string {
+  return typeof next === 'string' && /^\/(?![/\\])/.test(next) ? next : '/groups'
+}
 const router = useRouter()
 const route = useRoute()
 
@@ -19,8 +27,7 @@ async function submit() {
   busy.value = true
   try {
     await auth.login(email.value, password.value)
-    const next = typeof route.query.next === 'string' ? route.query.next : '/groups'
-    await router.push(next.startsWith('/') ? next : '/groups')
+    await router.push(safeNext(route.query.next))
   } catch (e) {
     error.value = errorMessage(e, 'Sign-in failed')
   } finally {
