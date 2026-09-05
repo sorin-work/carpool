@@ -10,6 +10,8 @@ import com.carpool.group.GroupMemberRepository;
 import com.carpool.ride.dto.MyRide;
 import com.carpool.notification.NotificationService;
 import com.carpool.notification.NotificationType;
+import com.carpool.swap.SwapRepository;
+import com.carpool.swap.SwapStatus;
 import com.carpool.user.User;
 import com.carpool.ride.dto.RideResponse;
 import com.carpool.trip.Trip;
@@ -41,12 +43,14 @@ public class RideService {
     private final NotificationService notifications;
     private final GroupMemberRepository members;
     private final RideViews rideViews;
+    private final SwapRepository swaps;
     private final Clock clock;
 
     public RideService(RideRepository rides, TripRepository trips, GroupAccess access, SeatPlanner planner,
                        SeatBookingRepository bookings, NotificationService notifications,
-                       GroupMemberRepository members, RideViews rideViews, Clock clock) {
+                       GroupMemberRepository members, RideViews rideViews, SwapRepository swaps, Clock clock) {
         this.rideViews = rideViews;
+        this.swaps = swaps;
         this.notifications = notifications;
         this.members = members;
         this.rides = rides;
@@ -177,6 +181,7 @@ public class RideService {
         requireOpen(ride);
         String why = reason == null || reason.isBlank() ? null : reason.trim();
         ride.cancel(why);
+        withdrawSwaps(ride);
 
         String message = RideMessages.describe(ride) + " was cancelled by " + RideMessages.bold(me.getDisplayName())
                 + (why != null ? ": " + why : ".");
@@ -209,6 +214,11 @@ public class RideService {
         String message = RideMessages.describe(ride) + " is back on.";
         notifications.notifyAll(affected(ride, me), NotificationType.RIDE_REINSTATED, message, RideMessages.link(ride));
         return view(ride, me);
+    }
+
+    /** Nobody can take over a ride that is not happening. */
+    private void withdrawSwaps(Ride ride) {
+        swaps.findPendingForRide(ride.getId()).forEach(swap -> swap.resolve(SwapStatus.CANCELLED, clock.instant()));
     }
 
     /** The driver and everyone holding or waiting for a seat, except whoever made the change. */
@@ -249,6 +259,7 @@ public class RideService {
                 continue;
             }
             ride.cancel(why);
+            withdrawSwaps(ride);
             String message = RideMessages.describe(ride) + " was cancelled by " + RideMessages.bold(admin.getDisplayName())
                     + (why != null ? ": " + why : ".");
             notifications.notifyAll(affected(ride, admin), NotificationType.RIDE_CANCELLED, message, RideMessages.link(ride));

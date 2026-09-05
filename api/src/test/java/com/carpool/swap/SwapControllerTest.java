@@ -173,4 +173,14 @@ class SwapControllerTest extends IntegrationTest {
                 .andExpect(jsonPath("$.myBooking").doesNotExist())
                 .andExpect(jsonPath("$.seatsTaken").value(0));
     }
+
+    @Test
+    void cancellingTheRideWithdrawsItsSwaps() throws Exception {
+        long swapId = askBen(null);
+
+        mvc.perform(postAs(ana, "/api/rides/{id}/cancel", tuesday)).andExpect(status().isOk());
+
+        mvc.perform(getAs(ben, "/api/groups/{id}/swaps", groupId)).andExpect(jsonPath("$[0].status").value("CANCELLED"));
+        mvc.perform(postAs(ben, "/api/swaps/{id}/accept", swapId)).andExpect(status().isConflict());
+    }
 }
