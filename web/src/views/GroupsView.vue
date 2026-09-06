@@ -137,6 +137,7 @@ onMounted(load)
 
 .group-card {
   display: grid;
+  overflow-wrap: anywhere;
   gap: 0.35rem;
   color: inherit;
   text-decoration: none;

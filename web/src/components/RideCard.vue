@@ -56,6 +56,8 @@ const bookingLabel: Record<string, string> = {
 
 .body {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: grid;
   gap: 0.25rem;
 }

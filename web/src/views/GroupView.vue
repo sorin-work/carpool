@@ -50,6 +50,10 @@ watch(
 </template>
 
 <style scoped>
+header h1 {
+  overflow-wrap: anywhere;
+}
+
 header p {
   margin: -0.4rem 0 0;
 }
