@@ -10,6 +10,13 @@ const store = useGroupStore()
 const { group, loading, error } = storeToRefs(store)
 
 watch(
+  () => group.value?.name,
+  (name) => {
+    if (name) document.title = `${name} · Carpool`
+  },
+)
+
+watch(
   () => Number(route.params.groupId),
   (id) => {
     if (id && id !== group.value?.id) {

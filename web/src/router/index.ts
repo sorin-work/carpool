@@ -10,32 +10,36 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('@/views/LoginView.vue'),
-      meta: { public: true },
+      meta: { public: true, title: 'Sign in' },
     },
     {
       path: '/register',
       name: 'register',
       component: () => import('@/views/RegisterView.vue'),
-      meta: { public: true },
+      meta: { public: true, title: 'Create an account' },
     },
     {
       path: '/groups',
       name: 'groups',
+      meta: { title: 'Your groups' },
       component: () => import('@/views/GroupsView.vue'),
     },
     {
       path: '/join/:code',
       name: 'join',
+      meta: { title: 'Join a group' },
       component: () => import('@/views/JoinView.vue'),
     },
     {
       path: '/profile',
       name: 'profile',
+      meta: { title: 'Profile' },
       component: () => import('@/views/ProfileView.vue'),
     },
     {
       path: '/notifications',
       name: 'notifications',
+      meta: { title: 'Notifications' },
       component: () => import('@/views/NotificationsView.vue'),
     },
     {
@@ -93,7 +97,7 @@ const router = createRouter({
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/views/NotFoundView.vue'),
-      meta: { public: true },
+      meta: { public: true, title: 'Page not found' },
     },
   ],
 })
@@ -108,6 +112,11 @@ router.beforeEach(async (to) => {
   }
   await auth.restore()
   return auth.isSignedIn ? true : { name: 'login' }
+})
+
+router.afterEach((to) => {
+  const title = typeof to.meta.title === 'string' ? to.meta.title : null
+  document.title = title ? `${title} · Carpool` : 'Carpool'
 })
 
 export default router
