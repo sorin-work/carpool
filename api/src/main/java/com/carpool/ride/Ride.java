@@ -54,6 +54,9 @@ public class Ride {
     @Column(length = 300)
     private String note;
 
+    @Column(name = "reminder_sent_at")
+    private Instant reminderSentAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -145,6 +148,14 @@ public class Ride {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public Instant getReminderSentAt() {
+        return reminderSentAt;
+    }
+
+    public void markReminded(Instant now) {
+        this.reminderSentAt = now;
     }
 
     public Instant getCreatedAt() {

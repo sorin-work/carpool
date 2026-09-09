@@ -66,4 +66,11 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
 
     @Query("select r from Ride r join fetch r.trip t join fetch t.group where t.id = :tripId and r.departureAt > :now")
     List<Ride> findUpcomingForTrip(Long tripId, Instant now);
+
+    @Query("""
+            select r from Ride r join fetch r.trip t join fetch t.group join fetch r.driver d join fetch d.user
+            where r.status = com.carpool.ride.RideStatus.SCHEDULED and r.reminderSentAt is null
+              and r.departureAt > :from and r.departureAt <= :to and t.active = true
+            """)
+    List<Ride> findNeedingReminder(Instant from, Instant to);
 }
