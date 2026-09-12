@@ -158,4 +158,20 @@ class TripControllerTest extends IntegrationTest {
                         .content(toJson(Map.of("from", "2026-03-13", "to", "2026-03-09"))))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void addsTheReturnJourney() throws Exception {
+        long tripId = read(mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(schoolRun())))
+                .andReturn()).get("id").asLong();
+
+        mvc.perform(postAs(ana, "/api/trips/{id}/return", tripId).content(toJson(Map.of("departureTime", "15:30"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Morning school run (return)"))
+                .andExpect(jsonPath("$.origin").value("Riverside Primary"))
+                .andExpect(jsonPath("$.destination").value("12 Elm St"))
+                .andExpect(jsonPath("$.departureTime").value("15:30:00"))
+                .andExpect(jsonPath("$.days", hasSize(5)));
+        mvc.perform(postAs(ben, "/api/trips/{id}/return", tripId).content(toJson(Map.of("departureTime", "15:30"))))
+                .andExpect(status().isForbidden());
+    }
 }

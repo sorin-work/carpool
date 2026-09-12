@@ -2,6 +2,7 @@ package com.carpool.trip;
 
 import com.carpool.security.AuthUser;
 import com.carpool.trip.dto.CancelRangeRequest;
+import com.carpool.trip.dto.ReturnTripRequest;
 import com.carpool.trip.dto.TripRequest;
 import com.carpool.trip.dto.TripResponse;
 import jakarta.validation.Valid;
@@ -73,5 +74,12 @@ public class TripController {
     public Map<String, Integer> cancelDays(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId,
                                            @Valid @RequestBody CancelRangeRequest request) {
         return Map.of("cancelled", tripService.cancelRange(tripId, auth.id(), request));
+    }
+
+    @PostMapping("/trips/{tripId}/return")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TripResponse addReturn(@AuthenticationPrincipal AuthUser auth, @PathVariable Long tripId,
+                                  @Valid @RequestBody ReturnTripRequest request) {
+        return tripService.addReturn(tripId, auth.id(), request);
     }
 }

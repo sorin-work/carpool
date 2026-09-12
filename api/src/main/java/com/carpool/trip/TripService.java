@@ -5,6 +5,7 @@ import com.carpool.group.GroupAccess;
 import com.carpool.group.GroupMember;
 import com.carpool.ride.RideService;
 import com.carpool.trip.dto.CancelRangeRequest;
+import com.carpool.trip.dto.ReturnTripRequest;
 import com.carpool.trip.dto.TripRequest;
 import com.carpool.trip.dto.TripResponse;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,23 @@ public class TripService {
         Trip trip = load(tripId);
         access.requireMember(trip.getGroup().getId(), userId);
         return TripResponse.from(trip);
+    }
+
+    /** The same trip the other way round, e.g. the afternoon pickup for a morning school run. */
+    @Transactional
+    public TripResponse addReturn(Long tripId, Long userId, ReturnTripRequest request) {
+        Trip outbound = load(tripId);
+        access.requireManager(outbound.getGroup().getId(), userId);
+        String name = request.name() != null && !request.name().isBlank() ? request.name().trim()
+                : truncate(outbound.getName() + " (return)", 80);
+        Trip back = new Trip(outbound.getGroup(), name, outbound.getDestination(), outbound.getOrigin(),
+                request.departureTime(), outbound.getDays(), outbound.getDistanceKm(), outbound.getStartsOn(),
+                outbound.getEndsOn(), clock.instant());
+        return TripResponse.from(trips.save(back));
+    }
+
+    private static String truncate(String text, int max) {
+        return text.length() <= max ? text : text.substring(0, max);
     }
 
     @Transactional
