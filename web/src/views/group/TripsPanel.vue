@@ -51,6 +51,18 @@ async function toggle(trip: Trip) {
   trips.value = trips.value.map((t) => (t.id === updated.id ? updated : t))
 }
 
+async function addReturn(trip: Trip) {
+  const time = prompt(`When does the way back from ${trip.destination} leave? (HH:MM)`, '15:30')
+  if (!time) return
+  if (!/^\d{1,2}:\d{2}$/.test(time)) {
+    notice.value = 'Use a time like 15:30.'
+    return
+  }
+  await tripApi.addReturn(trip.id, time.padStart(5, '0'))
+  notice.value = 'Return trip added.'
+  await load()
+}
+
 async function remove(trip: Trip) {
   if (!confirm(`Delete "${trip.name}" and all its rides?`)) return
   await tripApi.remove(trip.id)
@@ -95,6 +107,7 @@ onMounted(load)
           <template v-if="isManager">
             <button type="button" class="link" @click="editing = trip.id">Edit</button>
             <button type="button" class="link" @click="cancelling = trip.id">Cancel days</button>
+            <button type="button" class="link" @click="addReturn(trip)">Add return</button>
             <button type="button" class="link" @click="toggle(trip)">
               {{ trip.active ? 'Pause' : 'Resume' }}
             </button>
