@@ -39,7 +39,7 @@ public class MeController {
     @Transactional
     public UserResponse update(@AuthenticationPrincipal AuthUser auth, @Valid @RequestBody UpdateProfileRequest request) {
         User user = load(auth);
-        user.setDisplayName(request.displayName().trim());
+        user.setDisplayName(DisplayNames.clean(request.displayName()));
         return UserResponse.from(user);
     }
 

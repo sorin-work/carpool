@@ -39,7 +39,7 @@ public class AuthService {
         if (users.existsByEmailIgnoreCase(email)) {
             throw ApiException.conflict("An account with this email already exists");
         }
-        User user = users.save(new User(email, request.displayName().trim(),
+        User user = users.save(new User(email, DisplayNames.clean(request.displayName()),
                 passwordEncoder.encode(request.password()), clock.instant()));
         return tokenFor(user);
     }
