@@ -3,13 +3,16 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
-import { rideApi } from '@/api'
+import { absenceApi, rideApi } from '@/api'
 import { useGroupStore } from '@/stores/group'
 import SchedulePanel from '@/views/group/SchedulePanel.vue'
 
 import { member, ride } from './fixtures'
 
-vi.mock('@/api', () => ({ rideApi: { schedule: vi.fn() } }))
+vi.mock('@/api', () => ({
+  rideApi: { schedule: vi.fn() },
+  absenceApi: { list: vi.fn().mockResolvedValue([]) },
+}))
 
 async function mountPanel(week = '2026-03-02') {
   const router = createRouter({
@@ -65,6 +68,18 @@ describe('SchedulePanel', () => {
 
     expect(rideApi.schedule).toHaveBeenLastCalledWith(1, '2026-03-09', '2026-03-16')
     expect(router.currentRoute.value.query.week).toBe('2026-03-09')
+  })
+
+  it('lists who is away this week', async () => {
+    vi.mocked(rideApi.schedule).mockResolvedValue([])
+    vi.mocked(absenceApi.list).mockResolvedValueOnce([
+      { id: 1, memberId: 2, displayName: 'Elena', startsOn: '2026-03-05', endsOn: '2026-03-12' },
+      { id: 2, memberId: 3, displayName: 'Radu', startsOn: '2026-04-01', endsOn: '2026-04-02' },
+    ])
+    const { wrapper } = await mountPanel()
+
+    expect(wrapper.get('.away').text()).toContain('Elena')
+    expect(wrapper.get('.away').text()).not.toContain('Radu')
   })
 
   it('says when there is nothing this week', async () => {

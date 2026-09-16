@@ -3,9 +3,9 @@ import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { rideApi } from '@/api'
+import { absenceApi, rideApi } from '@/api'
 import { download, errorMessage } from '@/api/client'
-import type { Ride } from '@/api/types'
+import type { Absence, Ride } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import RideActions from '@/components/RideActions.vue'
 import RideCard from '@/components/RideCard.vue'
@@ -25,6 +25,12 @@ const from = ref(
   isDate(route.query.week) ? route.query.week : todayIn(group.value?.timezone ?? 'UTC'),
 )
 const rides = ref<Ride[]>([])
+const absences = ref<Absence[]>([])
+
+/** Who is away at some point in the week on screen. */
+const awayThisWeek = computed(() =>
+  absences.value.filter((a) => a.startsOn < to.value && a.endsOn >= from.value),
+)
 const loading = ref(true)
 const error = ref('')
 
@@ -43,7 +49,12 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    rides.value = await rideApi.schedule(group.value.id, from.value, to.value)
+    const [list, away] = await Promise.all([
+      rideApi.schedule(group.value.id, from.value, to.value),
+      absenceApi.list(group.value.id).catch(() => [] as Absence[]),
+    ])
+    rides.value = list
+    absences.value = away
   } catch (e) {
     error.value = errorMessage(e, 'Could not load the schedule')
   } finally {
@@ -96,6 +107,15 @@ watch(from, load, { immediate: true })
         Add my rides to a calendar
       </button>
     </div>
+
+    <p v-if="awayThisWeek.length" class="muted away">
+      Away this week:
+      <span v-for="(a, i) in awayThisWeek" :key="a.id">
+        {{ a.displayName }} ({{ formatDay(a.startsOn)
+        }}<template v-if="a.endsOn !== a.startsOn">–{{ formatDay(a.endsOn) }}</template
+        >){{ i < awayThisWeek.length - 1 ? ', ' : '' }}
+      </span>
+    </p>
 
     <p v-if="loading" class="muted">Loading…</p>
     <p v-else-if="error" class="error">{{ error }}</p>
