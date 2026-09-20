@@ -8,6 +8,7 @@ import type {
   GroupStats,
   GroupSummary,
   Member,
+  MemberRide,
   MyRide,
   Notification,
   Page,
@@ -118,6 +119,8 @@ export const swapApi = {
 export const statsApi = {
   get: (groupId: number, from?: string, to?: string) =>
     http.get<GroupStats>(`/groups/${groupId}/stats`, { from, to }),
+  memberRides: (groupId: number, memberId: number, from?: string, to?: string) =>
+    http.get<MemberRide[]>(`/groups/${groupId}/members/${memberId}/rides`, { from, to }),
 }
 
 export const costApi = {

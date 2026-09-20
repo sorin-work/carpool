@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 
 import { statsApi } from '@/api'
 import { download } from '@/api/client'
-import type { GroupStats } from '@/api/types'
+import type { GroupStats, MemberRide } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import MemberAvatar from '@/components/MemberAvatar.vue'
 import { useGroupStore } from '@/stores/group'
@@ -16,6 +16,24 @@ const { group } = storeToRefs(store)
 
 const period = ref(90)
 const stats = ref<GroupStats | null>(null)
+
+const openMember = ref<number | null>(null)
+const memberRides = ref<MemberRide[]>([])
+
+async function toggleMember(memberId: number) {
+  if (openMember.value === memberId) {
+    openMember.value = null
+    return
+  }
+  if (!group.value || !stats.value) return
+  openMember.value = memberId
+  memberRides.value = await statsApi.memberRides(
+    group.value.id,
+    memberId,
+    stats.value.from,
+    stats.value.to,
+  )
+}
 
 const maxDrives = computed(() => Math.max(1, ...(stats.value?.members.map((m) => m.drives) ?? [])))
 
@@ -74,23 +92,41 @@ watch(period, load, { immediate: true })
           </tr>
         </thead>
         <tbody>
-          <tr v-for="m in stats.members" :key="m.memberId">
-            <td>
-              <span class="row">
-                <MemberAvatar :name="m.displayName" :size="26" />
-                {{ m.displayName }}
-              </span>
-            </td>
-            <td class="num">
-              <span class="bar" :style="{ width: `${(m.drives / maxDrives) * 4}rem` }" />
-              {{ m.drives }}
-            </td>
-            <td class="num">{{ formatKm(m.kmDriven) }}</td>
-            <td class="num">{{ m.ridesTaken }}</td>
-            <td class="num">{{ m.driveShare }}%</td>
-            <td>{{ m.lastDrove ? formatDay(m.lastDrove) : '—' }}</td>
-            <td class="num">{{ m.upcomingDrives || '—' }}</td>
-          </tr>
+          <template v-for="m in stats.members" :key="m.memberId">
+            <tr>
+              <td>
+                <button
+                  type="button"
+                  class="link row who"
+                  :aria-expanded="openMember === m.memberId"
+                  @click="toggleMember(m.memberId)"
+                >
+                  <MemberAvatar :name="m.displayName" :size="26" />
+                  {{ m.displayName }}
+                </button>
+              </td>
+              <td class="num">
+                <span class="bar" :style="{ width: `${(m.drives / maxDrives) * 4}rem` }" />
+                {{ m.drives }}
+              </td>
+              <td class="num">{{ formatKm(m.kmDriven) }}</td>
+              <td class="num">{{ m.ridesTaken }}</td>
+              <td class="num">{{ m.driveShare }}%</td>
+              <td>{{ m.lastDrove ? formatDay(m.lastDrove) : '—' }}</td>
+              <td class="num">{{ m.upcomingDrives || '—' }}</td>
+            </tr>
+            <tr v-if="openMember === m.memberId" class="detail">
+              <td colspan="7">
+                <p v-if="!memberRides.length" class="muted">No rides in this period.</p>
+                <ul v-else>
+                  <li v-for="r in memberRides" :key="r.rideId">
+                    {{ formatDay(r.date) }} · {{ r.tripName }} · {{ r.driver ? 'drove' : 'rode' }}
+                    {{ formatKm(r.distanceKm) }}
+                  </li>
+                </ul>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
     </div>
@@ -100,6 +136,17 @@ watch(period, load, { immediate: true })
 <style scoped>
 table.card {
   padding: 0;
+}
+
+.who {
+  color: var(--text);
+  text-align: left;
+}
+
+.detail ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
 }
 
 .bar {

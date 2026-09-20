@@ -226,3 +226,11 @@ export interface CostReport {
   settlements: Transfer[]
   payments: Payment[]
 }
+
+export interface MemberRide {
+  rideId: number
+  date: string
+  tripName: string
+  driver: boolean
+  distanceKm: number
+}

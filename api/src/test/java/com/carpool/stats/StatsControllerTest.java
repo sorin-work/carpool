@@ -114,6 +114,20 @@ class StatsControllerTest extends IntegrationTest {
     }
 
     @Test
+    void listsOneMembersRides() throws Exception {
+        long benId = read(mvc.perform(getAs(ben, "/api/groups/{id}", groupId)).andReturn()).get("myMemberId").asLong();
+
+        mvc.perform(getAs(cara, "/api/groups/{g}/members/{m}/rides", groupId, benId)
+                        .param("from", "2026-03-01").param("to", "2026-03-08"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].date").value("2026-03-05"))
+                .andExpect(jsonPath("$[0].driver").value(true))
+                .andExpect(jsonPath("$[1].date").value("2026-03-03"))
+                .andExpect(jsonPath("$[1].driver").value(false));
+    }
+
+    @Test
     void outsidersGetNothing() throws Exception {
         String eve = register("eve@example.com", "Eve");
 
