@@ -103,6 +103,29 @@ public class StatsService {
         return new GroupStats(start, end, completed.size(), cancelled, result);
     }
 
+    /** The rides one member drove or rode in [from, to), newest first. */
+    @Transactional(readOnly = true)
+    public List<MemberRide> rides(Long groupId, Long memberId, Long userId, LocalDate from, LocalDate to) {
+        GroupMember me = access.requireMember(groupId, userId);
+        GroupMember member = members.findById(memberId)
+                .filter(m -> m.getGroup().getId().equals(groupId))
+                .orElseThrow(() -> ApiException.notFound("Member"));
+        LocalDate end = to != null ? to : LocalDate.now(clock.withZone(me.getGroup().getZone())).plusDays(1);
+        LocalDate start = from != null ? from : end.minusDays(DEFAULT_DAYS);
+        List<Ride> completed = rides.findCompleted(groupId, start, end, clock.instant());
+        Map<Long, List<SeatBooking>> confirmed = completed.isEmpty() ? Map.of()
+                : bookings.findActiveForRides(completed.stream().map(Ride::getId).toList()).stream()
+                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
+                .collect(Collectors.groupingBy(b -> b.getRide().getId()));
+        return completed.stream()
+                .filter(r -> r.isDrivenBy(member) || confirmed.getOrDefault(r.getId(), List.of()).stream()
+                        .anyMatch(b -> b.getMember().getId().equals(member.getId())))
+                .sorted(Comparator.comparing(Ride::getDepartureAt).reversed())
+                .map(r -> new MemberRide(r.getId(), r.getRideDate(), r.getTrip().getName(), r.isDrivenBy(member),
+                        r.getTrip().getDistanceKm()))
+                .toList();
+    }
+
     private static final class Tally {
         final GroupMember member;
         int drives;

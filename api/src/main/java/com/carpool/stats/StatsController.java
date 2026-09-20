@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 public class StatsController {
@@ -24,5 +25,13 @@ public class StatsController {
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return statsService.forGroup(groupId, auth.id(), from, to);
+    }
+
+    @GetMapping("/api/groups/{groupId}/members/{memberId}/rides")
+    public List<MemberRide> memberRides(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId,
+                                        @PathVariable Long memberId,
+                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return statsService.rides(groupId, memberId, auth.id(), from, to);
     }
 }
