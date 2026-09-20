@@ -5,6 +5,17 @@ import { useRoute } from 'vue-router'
 
 import { useGroupStore } from '@/stores/group'
 
+const tabs = [
+  { path: '', label: 'Schedule' },
+  { path: '/rotation', label: 'Rotation' },
+  { path: '/swaps', label: 'Swaps' },
+  { path: '/stats', label: 'Stats' },
+  { path: '/costs', label: 'Costs' },
+  { path: '/trips', label: 'Trips' },
+  { path: '/members', label: 'Members' },
+  { path: '/settings', label: 'Settings' },
+]
+
 const route = useRoute()
 const store = useGroupStore()
 const { group, loading, error } = storeToRefs(store)
@@ -36,14 +47,9 @@ watch(
       <p v-if="group.description" class="muted">{{ group.description }}</p>
     </header>
     <nav class="tabs">
-      <RouterLink :to="`/groups/${group.id}`">Schedule</RouterLink>
-      <RouterLink :to="`/groups/${group.id}/rotation`">Rotation</RouterLink>
-      <RouterLink :to="`/groups/${group.id}/swaps`">Swaps</RouterLink>
-      <RouterLink :to="`/groups/${group.id}/stats`">Stats</RouterLink>
-      <RouterLink :to="`/groups/${group.id}/costs`">Costs</RouterLink>
-      <RouterLink :to="`/groups/${group.id}/trips`">Trips</RouterLink>
-      <RouterLink :to="`/groups/${group.id}/members`">Members</RouterLink>
-      <RouterLink :to="`/groups/${group.id}/settings`">Settings</RouterLink>
+      <RouterLink v-for="tab in tabs" :key="tab.path" :to="`/groups/${group.id}${tab.path}`">
+        {{ tab.label }}
+      </RouterLink>
     </nav>
     <RouterView />
   </section>
