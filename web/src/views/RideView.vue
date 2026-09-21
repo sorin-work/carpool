@@ -99,7 +99,11 @@ watch(swapTarget, async (target) => {
     addDays(ride.value.date, 14),
   )
   targetRides.value = upcoming.filter(
-    (r) => r.driver?.memberId === target && r.status === 'SCHEDULED',
+    (r) =>
+      r.driver?.memberId === target &&
+      r.status === 'SCHEDULED' &&
+      r.id !== ride.value?.id &&
+      new Date(r.departureAt).getTime() > Date.now(),
   )
 })
 
