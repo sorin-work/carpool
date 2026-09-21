@@ -156,6 +156,16 @@ public class GroupService {
         }
     }
 
+    /** Only the owner can delete a group; everything in it goes with it. */
+    @Transactional
+    public void delete(Long groupId, Long userId) {
+        GroupMember me = access.requireMember(groupId, userId);
+        if (me.getRole() != MemberRole.OWNER) {
+            throw ApiException.forbidden("Only the owner can delete the group");
+        }
+        groups.delete(me.getGroup());
+    }
+
     @Transactional
     public void removeMember(Long groupId, Long memberId, Long userId) {
         GroupMember admin = access.requireManager(groupId, userId);

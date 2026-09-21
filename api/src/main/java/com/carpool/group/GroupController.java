@@ -85,6 +85,12 @@ public class GroupController {
         return groupService.changeRole(groupId, memberId, auth.id(), request.role());
     }
 
+    @DeleteMapping("/{groupId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId) {
+        groupService.delete(groupId, auth.id());
+    }
+
     @PostMapping("/{groupId}/leave")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void leave(@AuthenticationPrincipal AuthUser auth, @PathVariable Long groupId) {
