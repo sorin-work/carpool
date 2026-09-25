@@ -46,6 +46,7 @@ export const groupApi = {
     http.patch<GroupDetail>(`/groups/${id}`, changes),
   regenerateInvite: (id: number) => http.post<GroupDetail>(`/groups/${id}/invite-code`),
   leave: (id: number) => http.post<void>(`/groups/${id}/leave`),
+  remove: (id: number) => http.delete<void>(`/groups/${id}`),
   updateMyMembership: (
     id: number,
     body: { canDrive: boolean; carSeats: number; pickupNote?: string },

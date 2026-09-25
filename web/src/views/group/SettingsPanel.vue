@@ -52,6 +52,19 @@ async function save() {
   }
 }
 
+async function deleteGroup() {
+  if (!group.value) return
+  const typed = prompt(`This deletes every trip, ride and balance. Type the group name to confirm:`)
+  if (typed?.trim() !== group.value.name) return
+  error.value = ''
+  try {
+    await groupApi.remove(group.value.id)
+    await router.push('/groups')
+  } catch (e) {
+    error.value = errorMessage(e, 'Could not delete the group')
+  }
+}
+
 async function leave() {
   if (!group.value || !confirm(`Leave ${group.value.name}?`)) return
   error.value = ''
@@ -111,6 +124,12 @@ async function leave() {
         <template v-else>You can rejoin later with the invite code.</template>
       </p>
       <button type="button" class="danger" @click="leave">Leave group</button>
+    </section>
+
+    <section v-if="group.myRole === 'OWNER'" class="card">
+      <h2>Delete the group</h2>
+      <p class="muted">Removes the group for everyone, with all its trips, rides and costs.</p>
+      <button type="button" class="danger" @click="deleteGroup">Delete group</button>
     </section>
   </div>
 </template>
