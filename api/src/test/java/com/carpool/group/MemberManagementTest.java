@@ -144,4 +144,14 @@ class MemberManagementTest extends IntegrationTest {
         mvc.perform(getAs(ana, "/api/notifications"))
                 .andExpect(jsonPath("$.items[0].type").value("DRIVER_LEFT"));
     }
+
+    @Test
+    void theOwnerDeletesTheGroup() throws Exception {
+        mvc.perform(deleteAs(ben, "/api/groups/{id}", groupId)).andExpect(status().isForbidden());
+
+        mvc.perform(deleteAs(ana, "/api/groups/{id}", groupId)).andExpect(status().isNoContent());
+
+        mvc.perform(getAs(ben, "/api/groups/{id}", groupId)).andExpect(status().isNotFound());
+        mvc.perform(getAs(ben, "/api/groups")).andExpect(jsonPath("$", hasSize(0)));
+    }
 }

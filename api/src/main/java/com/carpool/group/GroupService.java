@@ -163,7 +163,7 @@ public class GroupService {
         if (me.getRole() != MemberRole.OWNER) {
             throw ApiException.forbidden("Only the owner can delete the group");
         }
-        groups.delete(me.getGroup());
+        groups.deleteWithEverything(groupId);
     }
 
     @Transactional
