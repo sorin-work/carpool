@@ -15,6 +15,8 @@ import com.carpool.ride.RideRepository;
 import com.carpool.ride.RideService;
 import com.carpool.rotation.Absence;
 import com.carpool.rotation.AbsenceRepository;
+import com.carpool.swap.SwapRepository;
+import com.carpool.swap.SwapRequest;
 import com.carpool.trip.Trip;
 import com.carpool.trip.TripRepository;
 import com.carpool.user.User;
@@ -61,13 +63,16 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final SeatBookingRepository bookings;
     private final AbsenceRepository absences;
     private final NotificationService notifications;
+    private final SwapRepository swaps;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
     public DemoDataSeeder(UserRepository users, GroupRepository groups, GroupMemberRepository members,
                           TripRepository trips, RideRepository rides, RideService rideService,
                           SeatBookingRepository bookings, AbsenceRepository absences,
-                          NotificationService notifications, PasswordEncoder passwordEncoder, Clock clock) {
+                          NotificationService notifications, SwapRepository swaps,
+                          PasswordEncoder passwordEncoder, Clock clock) {
+        this.swaps = swaps;
         this.users = users;
         this.groups = groups;
         this.members = members;
@@ -132,6 +137,18 @@ public class DemoDataSeeder implements ApplicationRunner {
         fill(office, List.of(o1, o2), List.of(o1, o2, o3), historyStart, today, random);
 
         absences.save(new Absence(m2, today.plusDays(8), today.plusDays(12), "Family holiday", clock.instant()));
+
+        // Mihai asks Dana to take one of his upcoming rides, so the swaps page has something to answer.
+        rides.findForGroup(school.getId(), today.plusDays(1), today.plusDays(4)).stream()
+                .filter(r -> r.isDrivenBy(m1) && !r.isCancelled())
+                .findFirst()
+                .ifPresent(r -> {
+                    swaps.save(new SwapRequest(r, m1, dana, null, "Work trip that morning, could you take it?",
+                            clock.instant()));
+                    notifications.notify(demo, NotificationType.SWAP_REQUESTED,
+                            "**Mihai Ionescu** asks if you can drive **" + r.getTrip().getName() + "**.",
+                            "/groups/" + school.getId() + "/swaps");
+                });
 
         notifications.notify(demo, NotificationType.SEAT_CONFIRMED,
                 "You have a seat on **" + morning.getName() + "** tomorrow with **Mihai Ionescu**.",
