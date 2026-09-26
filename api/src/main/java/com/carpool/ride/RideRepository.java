@@ -73,4 +73,8 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
               and r.departureAt > :from and r.departureAt <= :to and t.active = true
             """)
     List<Ride> findNeedingReminder(Instant from, Instant to);
+
+    /** Trip id and date of every stored ride of the group in [from, to). */
+    @Query("select r.trip.id, r.rideDate from Ride r where r.trip.group.id = :groupId and r.rideDate >= :from and r.rideDate < :to")
+    List<Object[]> findTripDates(Long groupId, LocalDate from, LocalDate to);
 }

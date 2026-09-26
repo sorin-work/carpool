@@ -26,7 +26,9 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 
@@ -296,8 +298,13 @@ public class RideService {
 
     /** Creates the rows for any ride in the range that has not been stored yet. */
     public void materialize(CarpoolGroup group, LocalDate from, LocalDate to) {
+        // One query for the stored dates of every trip, instead of one per trip.
+        Map<Long, Set<LocalDate>> stored = new HashMap<>();
+        for (Object[] row : rides.findTripDates(group.getId(), from, to)) {
+            stored.computeIfAbsent((Long) row[0], id -> new HashSet<>()).add((LocalDate) row[1]);
+        }
         for (Trip trip : trips.findByGroupIdAndActiveTrue(group.getId())) {
-            Set<LocalDate> existing = new HashSet<>(rides.findDatesForTrip(trip.getId(), from, to));
+            Set<LocalDate> existing = stored.getOrDefault(trip.getId(), Set.of());
             for (RideGenerator.PlannedRide planned : RideGenerator.plan(trip, group.getZone(), from, to)) {
                 if (!existing.contains(planned.date())) {
                     rides.save(new Ride(trip, planned.date(), planned.departureAt(), clock.instant()));
