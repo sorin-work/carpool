@@ -19,6 +19,7 @@ const proposals = ref<RotationProposal[]>([])
 const loading = ref(false)
 const applied = ref(false)
 const error = ref('')
+const applying = ref(false)
 
 const to = computed(() => addDays(from.value, days.value))
 const unassigned = computed(() => proposals.value.filter((p) => !p.memberId).length)
@@ -45,7 +46,8 @@ async function preview() {
 }
 
 async function apply() {
-  if (!group.value) return
+  if (!group.value || applying.value) return
+  applying.value = true
   error.value = ''
   try {
     await rotationApi.apply(group.value.id, from.value, to.value)
@@ -53,6 +55,8 @@ async function apply() {
     proposals.value = []
   } catch (e) {
     error.value = errorMessage(e, 'Could not apply the rotation')
+  } finally {
+    applying.value = false
   }
 }
 
@@ -116,7 +120,9 @@ watch([from, days], preview, { immediate: true })
         </table>
       </div>
       <div v-if="isManager">
-        <button type="button" class="primary" @click="apply">Assign these drivers</button>
+        <button type="button" class="primary" :disabled="applying" @click="apply">
+          {{ applying ? 'Assigning…' : 'Assign these drivers' }}
+        </button>
       </div>
     </template>
 
