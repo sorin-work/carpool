@@ -11,7 +11,7 @@ import { useGroupStore } from '@/stores/group'
 import { addDays, formatDay, formatTime, todayIn } from '@/utils/dates'
 
 const store = useGroupStore()
-const { group, isManager } = storeToRefs(store)
+const { group, isManager, drivers } = storeToRefs(store)
 
 const from = ref(todayIn(group.value?.timezone ?? 'UTC'))
 const days = ref(7)
@@ -87,6 +87,9 @@ watch([from, days], preview, { immediate: true })
     <p v-if="error" class="error">{{ error }}</p>
     <p v-if="applied" class="badge">Drivers assigned and notified.</p>
     <p v-if="loading" class="muted">Planning…</p>
+    <EmptyState v-else-if="!drivers.length" title="Nobody can drive yet">
+      Members who have a car can say so on the Members tab; the rotation only picks them.
+    </EmptyState>
     <EmptyState v-else-if="!proposals.length && !applied" title="Every ride has a driver">
       Nothing to plan in this period.
     </EmptyState>
