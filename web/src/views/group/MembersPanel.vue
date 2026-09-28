@@ -20,7 +20,17 @@ async function copy(what: 'code' | 'link') {
   if (!group.value) return
   const text =
     what === 'code' ? group.value.inviteCode : `${location.origin}/join/${group.value.inviteCode}`
-  await navigator.clipboard?.writeText(text)
+  // The clipboard API only exists on https and localhost; on a LAN address show the text instead.
+  if (!navigator.clipboard) {
+    prompt('Copy this:', text)
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    prompt('Copy this:', text)
+    return
+  }
   copied.value = what
   setTimeout(() => (copied.value = null), 1500)
 }
