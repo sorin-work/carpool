@@ -24,6 +24,13 @@ export interface GroupSummary {
   description?: string
   myRole: Role
   memberCount: number
+  nextRide?: {
+    rideId: number
+    date: string
+    departureAt: string
+    tripName: string
+    driving: boolean
+  }
 }
 
 export interface Member {

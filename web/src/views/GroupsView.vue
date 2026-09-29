@@ -7,6 +7,7 @@ import { ApiError, errorMessage } from '@/api/client'
 import type { GroupSummary } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import UpcomingRides from '@/components/UpcomingRides.vue'
+import { formatDay } from '@/utils/dates'
 
 const router = useRouter()
 
@@ -88,6 +89,10 @@ onMounted(load)
             <span class="badge neutral">{{ roleLabel[group.myRole] }}</span>
             {{ group.memberCount }} {{ group.memberCount === 1 ? 'member' : 'members' }}
           </span>
+          <span v-if="group.nextRide" class="next">
+            Next: {{ group.nextRide.driving ? 'you drive' : 'you ride' }}
+            {{ group.nextRide.tripName }}, {{ formatDay(group.nextRide.date) }}
+          </span>
         </RouterLink>
       </li>
     </ul>
@@ -145,6 +150,11 @@ onMounted(load)
 
 .group-card:hover {
   border-color: var(--accent);
+}
+
+.next {
+  font-size: 0.9rem;
+  color: var(--accent-strong);
 }
 
 .name {
