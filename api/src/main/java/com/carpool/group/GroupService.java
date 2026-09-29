@@ -17,6 +17,7 @@ import com.carpool.ride.RideRepository;
 import com.carpool.booking.SeatBookingRepository;
 import com.carpool.user.User;
 import com.carpool.user.UserRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,12 +64,22 @@ public class GroupService {
         return detail(group.getId(), userId);
     }
 
+    /** My groups, each with my next ride in it. */
     @Transactional(readOnly = true)
     public List<GroupSummary> listMine(Long userId) {
         return members.findAllForUser(userId).stream()
                 .map(m -> new GroupSummary(m.getGroup().getId(), m.getGroup().getName(),
-                        m.getGroup().getDescription(), m.getRole(), members.countByGroupId(m.getGroup().getId())))
+                        m.getGroup().getDescription(), m.getRole(), members.countByGroupId(m.getGroup().getId()),
+                        nextRide(m)))
                 .toList();
+    }
+
+    private GroupSummary.NextRide nextRide(GroupMember member) {
+        return rides.findNextFor(member.getGroup().getId(), member.getId(), clock.instant(), PageRequest.of(0, 1))
+                .stream().findFirst()
+                .map(r -> new GroupSummary.NextRide(r.getId(), r.getRideDate(), r.getDepartureAt(),
+                        r.getTrip().getName(), r.isDrivenBy(member)))
+                .orElse(null);
     }
 
     @Transactional(readOnly = true)

@@ -1,5 +1,6 @@
 package com.carpool.ride;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -77,4 +78,16 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
     /** Trip id and date of every stored ride of the group in [from, to). */
     @Query("select r.trip.id, r.rideDate from Ride r where r.trip.group.id = :groupId and r.rideDate >= :from and r.rideDate < :to")
     List<Object[]> findTripDates(Long groupId, LocalDate from, LocalDate to);
+
+    /** The member's next rides in a group, as driver or with a seat request. */
+    @Query("""
+            select r from Ride r join fetch r.trip t left join fetch r.driver
+            where t.group.id = :groupId and r.status = com.carpool.ride.RideStatus.SCHEDULED
+              and r.departureAt > :now and t.active = true
+              and (r.driver.id = :memberId or exists (
+                    select b.id from SeatBooking b where b.ride = r and b.member.id = :memberId
+                      and b.status <> com.carpool.booking.BookingStatus.CANCELLED))
+            order by r.departureAt
+            """)
+    List<Ride> findNextFor(Long groupId, Long memberId, Instant now, Pageable page);
 }

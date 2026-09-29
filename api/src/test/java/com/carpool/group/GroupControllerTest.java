@@ -104,4 +104,23 @@ class GroupControllerTest extends IntegrationTest {
                 .andExpect(jsonPath("$.alreadyMember").value(false));
         mvc.perform(getAs(ben, "/api/groups/invite/{code}", "NOPE2345")).andExpect(status().isNotFound());
     }
+
+    @Test
+    void theGroupListShowsMyNextRide() throws Exception {
+        String ana = register("ana@example.com", "Ana");
+        JsonNode group = createGroup(ana, "School run");
+        long groupId = group.get("id").asLong();
+        mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(com.carpool.support.Fixtures.schoolRun())));
+        mvc.perform(putAs(ana, "/api/groups/{id}/members/me", groupId).content(toJson(com.carpool.support.Fixtures.car(3))));
+
+        mvc.perform(getAs(ana, "/api/groups")).andExpect(jsonPath("$[0].nextRide").doesNotExist());
+
+        JsonNode rides = read(mvc.perform(getAs(ana, "/api/groups/{id}/rides", groupId)
+                .param("from", "2026-03-04").param("to", "2026-03-06")).andReturn());
+        mvc.perform(postAs(ana, "/api/rides/{id}/driver", rides.get(1).get("id").asLong()));
+
+        mvc.perform(getAs(ana, "/api/groups"))
+                .andExpect(jsonPath("$[0].nextRide.date").value("2026-03-05"))
+                .andExpect(jsonPath("$[0].nextRide.driving").value(true));
+    }
 }
