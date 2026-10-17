@@ -55,6 +55,8 @@ someone else is driving) answer `409`.
 | GET    | `/groups`                                  | me                 |
 | POST   | `/groups`                                  | anyone, becomes owner |
 | POST   | `/groups/join`                             | `inviteCode`, case and dashes ignored |
+| GET    | `/groups/invite/{code}`                    | name and size of the group behind a code |
+| DELETE | `/groups/{id}`                             | owner; deletes everything in the group |
 | GET    | `/groups/{id}`                             | members            |
 | PATCH  | `/groups/{id}`                             | admins; `name`, `description`, `timezone`, `costPerKm`, `currency` |
 | POST   | `/groups/{id}/invite-code`                 | admins; new code, old one stops working |
@@ -76,6 +78,8 @@ date range is read, so there is no endpoint to create them.
 | PUT    | `/trips/{id}`                          | admins |
 | POST   | `/trips/{id}/pause`, `/resume`         | admins; paused trips drop out of the upcoming schedule |
 | DELETE | `/trips/{id}`                          | admins; deletes the trip's rides too |
+| POST   | `/trips/{id}/return`                   | admins; copy with origin and destination swapped, `departureTime` |
+| POST   | `/trips/{id}/cancel-days`              | admins; `from`, `to` (inclusive), `reason`; at most 62 days |
 | GET    | `/groups/{id}/rides?from&to`           | members; at most 62 days, defaults to two weeks from today |
 | GET    | `/rides/{id}`                          | members |
 | POST   | `/rides/{id}/driver`                   | members with a car; optional `seats` |
@@ -134,7 +138,20 @@ before turning those into bold. Notifications older than 90 days are deleted eve
 passengers carried and the share of their trips they drove. Only rides that actually left and
 were not cancelled count. Defaults to the last 90 days.
 
+`GET /groups/{id}/members/{memberId}/rides?from&to` lists the rides one member drove or rode.
+
 `GET /groups/{id}/costs?from&to` defaults to the current month. Each ride costs
 `distanceKm × costPerKm`, split equally between everyone in the car; riders owe their share to
 the driver. Amounts are in cents. `settlements` is a short list of payments that evens everyone
 out.
+
+`POST /groups/{id}/payments` records money paid to settle up: `fromMemberId`, `toMemberId`,
+`amountCents`, optional `paidOn`. Either of the two members or an admin can record it, and it
+counts towards the balance of the period it falls in.
+
+## Limits
+
+Five wrong passwords for one email within 15 minutes block logins for that email for the rest of
+the window (`429`).
+
+See [architecture.md](architecture.md) for how the rotation, seats and costs are worked out.
