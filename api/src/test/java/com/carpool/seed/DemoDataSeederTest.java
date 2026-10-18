@@ -39,6 +39,9 @@ class DemoDataSeederTest extends IntegrationTest {
         long schoolId = groups.findValues("id").get(0).asLong();
         JsonNode stats = read(mvc.perform(getAs(token, "/api/groups/{id}/stats", schoolId)).andReturn());
         assertThat(stats.get("rides").asInt()).isGreaterThan(20);
+
+        JsonNode swaps = read(mvc.perform(getAs(token, "/api/groups/{id}/swaps", schoolId)).andReturn());
+        assertThat(swaps.size()).isEqualTo(1);
     }
 
     @Test

@@ -138,15 +138,17 @@ public class DemoDataSeeder implements ApplicationRunner {
 
         absences.save(new Absence(m2, today.plusDays(8), today.plusDays(12), "Family holiday", clock.instant()));
 
-        // Mihai asks Dana to take one of his upcoming rides, so the swaps page has something to answer.
-        rides.findForGroup(school.getId(), today.plusDays(1), today.plusDays(4)).stream()
-                .filter(r -> r.isDrivenBy(m1) && !r.isCancelled())
+        // Another parent asks Dana to take one of their upcoming rides, so the swaps page has
+        // something to answer. Who drives which day depends on the start date, so take whoever it is.
+        rides.findForGroup(school.getId(), today, today.plusDays(4)).stream()
+                .filter(r -> r.hasDriver() && !r.isDrivenBy(dana) && !r.isCancelled() && !r.hasDeparted(clock.instant()))
                 .findFirst()
                 .ifPresent(r -> {
-                    swaps.save(new SwapRequest(r, m1, dana, null, "Work trip that morning, could you take it?",
+                    GroupMember asking = r.getDriver();
+                    swaps.save(new SwapRequest(r, asking, dana, null, "Work trip that morning, could you take it?",
                             clock.instant()));
                     notifications.notify(demo, NotificationType.SWAP_REQUESTED,
-                            "**Mihai Ionescu** asks if you can drive **" + r.getTrip().getName() + "**.",
+                            "**" + asking.getDisplayName() + "** asks if you can drive **" + r.getTrip().getName() + "**.",
                             "/groups/" + school.getId() + "/swaps");
                 });
 
