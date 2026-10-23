@@ -19,7 +19,12 @@ public final class RideMessages {
     }
 
     public static String link(Ride ride) {
-        return "/groups/" + ride.getTrip().getGroup().getId() + "/rides/" + ride.getId();
+        return groupLink(ride.getTrip().getGroup().getId(), "/rides/" + ride.getId());
+    }
+
+    /** A page of a group in the web app, e.g. {@code groupLink(3, "/swaps")}. */
+    public static String groupLink(Long groupId, String page) {
+        return "/groups/" + groupId + page;
     }
 
     public static String bold(String text) {

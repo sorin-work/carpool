@@ -11,6 +11,7 @@ import com.carpool.group.MemberRole;
 import com.carpool.notification.NotificationService;
 import com.carpool.notification.NotificationType;
 import com.carpool.ride.Ride;
+import com.carpool.ride.RideMessages;
 import com.carpool.ride.RideRepository;
 import com.carpool.ride.RideService;
 import com.carpool.rotation.Absence;
@@ -149,15 +150,15 @@ public class DemoDataSeeder implements ApplicationRunner {
                             clock.instant()));
                     notifications.notify(demo, NotificationType.SWAP_REQUESTED,
                             "**" + asking.getDisplayName() + "** asks if you can drive **" + r.getTrip().getName() + "**.",
-                            "/groups/" + school.getId() + "/swaps");
+                            RideMessages.groupLink(school.getId(), "/swaps"));
                 });
 
         notifications.notify(demo, NotificationType.SEAT_CONFIRMED,
                 "You have a seat on **" + morning.getName() + "** tomorrow with **Mihai Ionescu**.",
-                "/groups/" + school.getId());
+                RideMessages.groupLink(school.getId(), ""));
         notifications.notify(demo, NotificationType.RIDE_CANCELLED,
                 "**Commute to Northside** last Thursday was cancelled by **Andrei Dobre**: Office closed for a power cut.",
-                "/groups/" + office.getId());
+                RideMessages.groupLink(office.getId(), ""));
         log.info("Demo data created: sign in as {} / {}", DEMO_EMAIL, DEMO_PASSWORD);
     }
 

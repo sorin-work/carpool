@@ -77,7 +77,7 @@ public class SwapService {
 
         String message = RideMessages.bold(me.getDisplayName()) + " asks if you can drive " + RideMessages.describe(ride)
                 + (offered != null ? ", taking " + RideMessages.describe(offered) + " from you in return" : "") + ".";
-        notifications.notify(target.getUser(), NotificationType.SWAP_REQUESTED, message, "/groups/" + groupId + "/swaps");
+        notifications.notify(target.getUser(), NotificationType.SWAP_REQUESTED, message, RideMessages.groupLink(groupId, "/swaps"));
         return SwapResponse.from(swap);
     }
 
