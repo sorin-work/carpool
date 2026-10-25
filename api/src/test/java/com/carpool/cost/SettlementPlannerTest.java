@@ -3,7 +3,11 @@ package com.carpool.cost;
 import com.carpool.cost.SettlementPlanner.Transfer;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,5 +46,33 @@ class SettlementPlannerTest {
         long paid = SettlementPlanner.settle(balances).stream().mapToLong(Transfer::amountCents).sum();
 
         assertThat(paid).isEqualTo(1000);
+    }
+
+    @Test
+    void randomGroupsAlwaysEndUpEven() {
+        Random random = new Random(42);
+        for (int round = 0; round < 200; round++) {
+            int size = 2 + random.nextInt(7);
+            List<MemberBalance> balances = new ArrayList<>();
+            long sum = 0;
+            for (int i = 1; i < size; i++) {
+                long cents = random.nextInt(4001) - 2000;
+                balances.add(balance(i, cents));
+                sum += cents;
+            }
+            balances.add(balance(size, -sum));
+
+            Map<Long, Long> after = new HashMap<>();
+            balances.forEach(b -> after.put(b.memberId(), b.balanceCents()));
+            List<Transfer> transfers = SettlementPlanner.settle(balances);
+            for (Transfer t : transfers) {
+                assertThat(t.amountCents()).isPositive();
+                after.merge(t.fromMemberId(), t.amountCents(), Long::sum);
+                after.merge(t.toMemberId(), -t.amountCents(), Long::sum);
+            }
+
+            assertThat(after.values()).containsOnly(0L);
+            assertThat(transfers.size()).isLessThan(size);
+        }
     }
 }
