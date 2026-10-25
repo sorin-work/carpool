@@ -144,6 +144,26 @@ describe('NotificationsView', () => {
     expect(router.currentRoute.value.path).toBe('/groups/1/rides/9')
   })
 
+  it('never renders html from the message', async () => {
+    vi.mocked(notificationApi.list).mockResolvedValue(
+      page([
+        {
+          id: 9,
+          type: 'RIDE_CANCELLED',
+          message: '**<img src=x onerror=alert(1)>** was cancelled: <b>bold</b>',
+          createdAt: '2026-03-02T06:00:00Z',
+          read: false,
+        },
+      ]),
+    )
+    const wrapper = mount(NotificationsView, { global: { plugins: [makeRouter()] } })
+    await flushPromises()
+
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.find('.message b').exists()).toBe(false)
+    expect(wrapper.get('.message').text()).toContain('<b>bold</b>')
+  })
+
   it('has a friendly empty state', async () => {
     vi.mocked(notificationApi.list).mockResolvedValue(page([]))
     const wrapper = mount(NotificationsView, { global: { plugins: [makeRouter()] } })
