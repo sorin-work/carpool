@@ -86,8 +86,12 @@ public class Ride {
         return departureAt;
     }
 
+    /** A ride at a new time needs a new reminder. */
     public void moveTo(Instant departureAt) {
-        this.departureAt = departureAt;
+        if (!departureAt.equals(this.departureAt)) {
+            this.departureAt = departureAt;
+            this.reminderSentAt = null;
+        }
     }
 
     public GroupMember getDriver() {

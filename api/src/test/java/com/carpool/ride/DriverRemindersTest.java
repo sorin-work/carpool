@@ -41,4 +41,24 @@ class DriverRemindersTest extends IntegrationTest {
                 .andExpect(jsonPath("$.items[0].type").value("DRIVER_REMINDER"))
                 .andExpect(jsonPath("$.items[0].message", containsString("Tue 3 Mar at 07:45 (1 rider)")));
     }
+
+    @Test
+    void aRideMovedToAnotherTimeIsRemindedAgain() throws Exception {
+        String ana = register("ana@example.com", "Ana");
+        long groupId = createGroup(ana, "School run").get("id").asLong();
+        long tripId = read(mvc.perform(postAs(ana, "/api/groups/{id}/trips", groupId).content(toJson(Fixtures.schoolRun())))
+                .andReturn()).get("id").asLong();
+        mvc.perform(putAs(ana, "/api/groups/{id}/members/me", groupId).content(toJson(Fixtures.car(3))));
+        long rideId = read(mvc.perform(getAs(ana, "/api/groups/{id}/rides", groupId)
+                .param("from", "2026-03-03").param("to", "2026-03-04")).andReturn()).get(0).get("id").asLong();
+        mvc.perform(postAs(ana, "/api/rides/{id}/driver", rideId));
+        clock.set(Instant.parse("2026-03-02T18:00:00Z"));
+        assertThat(reminders.send()).isEqualTo(1);
+
+        java.util.Map<String, Object> later = Fixtures.schoolRun();
+        later.put("departureTime", "09:00");
+        mvc.perform(putAs(ana, "/api/trips/{id}", tripId).content(toJson(later)));
+
+        assertThat(reminders.send()).isEqualTo(1);
+    }
 }
