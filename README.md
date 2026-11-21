@@ -155,6 +155,8 @@ web/                      Vue 3 app
 docs/api.md               API notes
 ```
 
+Ideas for what could come next are in [ROADMAP.md](ROADMAP.md).
+
 ## License
 
 [MIT](LICENSE)
