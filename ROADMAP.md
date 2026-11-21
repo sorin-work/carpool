@@ -685,3 +685,97 @@ recorded at all.
 - A migration turns every member with `can_drive` into one vehicle with their seats.
 - Tests: migration on existing data, driving with a second car, the rotation preferring child
   seats when the riders need them.
+
+## Maybe
+
+### 31. Translations
+
+The UI is English only, with dates and money formatted as `en-GB` (`web/src/utils/dates.ts`,
+`money.ts`), while the demo groups and the default time zone are in Bucharest. A Romanian school
+group would want Romanian.
+
+- `vue-i18n` in the web app, English and Romanian to start, a language choice on the profile and
+  the browser's language as the default. Formats follow the chosen language.
+- The hard part is on the server: notifications are stored as finished English sentences
+  (`RideMessages`). Translating them later needs the type and its parameters stored instead, and
+  the text built when it is shown.
+- That rewrite of the notifications is why this is a Maybe: it touches every service that
+  notifies.
+- Tests: a spec that every key exists in both languages; tests for building notification text
+  from its parameters.
+
+### 32. Installable app with the week offline
+
+The app is mostly used on a phone in the morning, often in a car park with a weak signal.
+
+- A web app manifest and a service worker (`vite-plugin-pwa`) so it can be installed, and the
+  schedule and "my rides" kept for reading offline, with "as of 07:12" shown when the data comes
+  from the cache.
+- Nothing is changed offline; buttons are disabled with a short message.
+- Tricky: stale data is worse than none when a ride was cancelled. The "as of" line has to be
+  impossible to miss.
+- Tests: a spec for the offline banner; the service worker itself is checked by hand.
+
+### 33. Push notifications
+
+With item 32 in place, Web Push can deliver a cancellation to a phone without email. The server
+signs pushes with its own VAPID keys and needs no account anywhere, but the messages do travel
+through the browser vendor's push service, which is worth saying in the docs.
+
+- `push_subscriptions` per user and device, a subscribe toggle on the profile page, sending from
+  the same outbox as email (item 12) if that exists.
+- Tricky: iOS only delivers pushes to installed web apps, which is why this depends on item 32.
+- Tests: the subscription endpoints and the payload builder; delivery is checked by hand.
+
+### 34. Distances from a self-hosted router
+
+The distance of a trip is typed by hand, and it drives every cost. People guess, or copy it from a
+map app.
+
+- An optional `ROUTING_URL` pointing at an OSRM server the group runs itself. With it, the trip
+  form has "Work out the distance" for the origin and destination.
+- The catch: OSRM needs coordinates, and turning an address into coordinates needs a geocoder
+  (Nominatim), which is another heavy service to run. Choosing points on a map instead avoids it
+  but adds a map library and tiles.
+- Without `ROUTING_URL` nothing changes, so the app keeps working without any service.
+- Tests: the client against a stub server.
+
+### 35. Holidays from a calendar file
+
+Cancelling school holidays is a manual "cancel days" per trip, at most 62 days at a time
+(`TripService.cancelRange`). Schools and councils publish their holidays as calendar files.
+
+- Upload an `.ics` file on the trips tab, see the date ranges it contains, tick the ones to apply
+  and to which trips, and the existing `cancelRange` does the rest with the event's name as the
+  reason.
+- Only all-day events, read with a small parser for `VEVENT`, `DTSTART` and `DTEND`; recurring
+  events are left out of the first version.
+- Tests: parser unit tests on a real-looking school calendar; an integration test for applying a
+  range to two trips.
+
+### 36. More than one API instance
+
+The compose stack runs one API container, and some parts assume it: `LoginThrottle` keeps its
+counts in memory, and the scheduled jobs run in every instance, so two instances would send
+every reminder twice (the `reminder_sent_at` check and update can race).
+
+- ShedLock with its JDBC provider so each job runs once, and the throttle counts in a table.
+- This only matters to someone who runs several instances behind a load balancer, which is more
+  than a carpool group needs. Hence Maybe.
+- Tests: the throttle against the table; a job test that a held lock skips the run.
+
+### 37. Faster schedule reads in big groups
+
+Every read of a date range first runs `RideService.materialize` for every active trip, and
+`upcomingFor` (my rides across groups) does that for each group in turn, then builds views ride by
+ride. For a family in three groups with a few trips each that is fine. For an office pool with
+40 trips, or a member in many groups, every page load does work that only matters once per ride.
+
+- Measure first: the test setup already counts SQL statements
+  (`hibernate.generate_statistics`), so a test can pin the number of queries for the schedule, my
+  rides and the calendar.
+- Then: remember per trip how far rides exist (`materialized_until`) so reads skip generating,
+  and let a nightly job extend every trip a few weeks ahead.
+- Tricky: standing requests (item 1) create bookings when rides are created; moving creation into
+  a job moves that too, which is fine as long as it happens before anyone can see the ride.
+- Tests: statement count tests for the three endpoints before and after.
